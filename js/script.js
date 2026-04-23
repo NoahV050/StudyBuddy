@@ -2,7 +2,7 @@ function createDefaultState() {
   return {
     name: 'Student',
     age: '',
-    studyLevel: 'High school',
+    studyLevel: 'Middelbare school',
     profileComplete: false,
     xp: 0,
     level: 0,
@@ -37,24 +37,24 @@ var remoteSaveTimer = null;
 var isHydratingRemoteState = false;
 var pendingGuestMigration = false;
 var syncState = 'guest';
-var syncMessage = 'Your data is currently stored only on this device.';
+var syncMessage = 'Je gegevens staan nu alleen op dit apparaat.';
 
-var LEVELS = ['Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate', 'Professor'];
+var LEVELS = ['Beginner', 'Gevorderd', 'Ervaring', 'Expert', 'Gespecialiseerd', 'Meester'];
 var LEVEL_XP = [0, 200, 500, 1000, 2000, 3500];
 var GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-flash-latest'];
 var MODES = {
-  pomo: { s: 1500, label: 'Work' },
-  short: { s: 600, label: 'Work' },
-  long: { s: 3000, label: 'Deep work' }
+  pomo: { s: 1500, label: 'Focus' },
+  short: { s: 600, label: 'Focus' },
+  long: { s: 3000, label: 'Diep focus' }
 };
 var BADGES = [
-  { id: 'first_session', name: 'First session', icon: '>', cond: function() { return state.sessionsToday >= 1 || state.xp >= 50; } },
-  { id: 'streak3', name: '3 day streak', icon: '*', cond: function() { return state.streak >= 3; } },
+  { id: 'first_session', name: 'Eerste sessie', icon: '>', cond: function() { return state.sessionsToday >= 1 || state.xp >= 50; } },
+  { id: 'streak3', name: '3 dagen reeks', icon: '*', cond: function() { return state.streak >= 3; } },
   { id: 'xp100', name: '100 XP', icon: '*', cond: function() { return state.xp >= 100; } },
-  { id: 'tasks5', name: '5 tasks done', icon: '+', cond: function() { return state.tasks.filter(function(t) { return t.done; }).length >= 5; } },
+  { id: 'tasks5', name: '5 taken klaar', icon: '+', cond: function() { return state.tasks.filter(function(t) { return t.done; }).length >= 5; } },
   { id: 'xp500', name: '500 XP', icon: '#', cond: function() { return state.xp >= 500; } },
-  { id: 'streak7', name: 'Week streak', icon: '7', cond: function() { return state.streak >= 7; } },
-  { id: 'notes3', name: '3 notes', icon: 'N', cond: function() { return state.notes.length >= 3; } },
+  { id: 'streak7', name: 'Week reeks', icon: '7', cond: function() { return state.streak >= 7; } },
+  { id: 'notes3', name: '3 notities', icon: 'N', cond: function() { return state.notes.length >= 3; } },
   { id: 'ask_ai', name: 'AI student', icon: 'AI', cond: function() { return state.chatHistory.length > 0; } }
 ];
 var SUPABASE_CONFIG = window.STUDY_BUDDY_CONFIG || {};
@@ -73,7 +73,7 @@ function getLevel(xp) {
 }
 
 function getLevelName(xp) {
-  return LEVELS[getLevel(xp)] || 'Professor';
+  return LEVELS[getLevel(xp)] || 'Meester';
 }
 
 function xpToNext(xp) {
@@ -234,7 +234,7 @@ function renderChatHistory() {
   if (!area) return;
   area.innerHTML = '';
   if (!state.chatHistory.length) {
-    addBubble('ai', 'Hi! I\'m your Study Buddy tutor. Ask me anything - I\'ll guide you through it step by step, not just give you answers.');
+    addBubble('ai', 'Hoi! Ik ben je Studiemaatje tutor. Stel me gerust een vraag - ik help je stap voor stap, niet alleen met het antwoord.');
     return;
   }
   state.chatHistory.forEach(function(item) {
@@ -246,7 +246,7 @@ function renderSessionLog() {
   var log = document.getElementById('sessions-log');
   if (!log) return;
   if (!state.sessionLog || !state.sessionLog.length) {
-    log.textContent = 'No sessions yet';
+    log.textContent = 'Nog geen sessies';
     return;
   }
   log.innerHTML = state.sessionLog.map(function(item) {
@@ -277,7 +277,18 @@ function showProfileSetup() {
   document.getElementById('tab-bar').style.display = 'none';
   document.getElementById('ob-name').value = state.name && state.name !== 'Student' ? state.name : '';
   document.getElementById('ob-age').value = state.age || '';
-  document.getElementById('ob-level').value = state.studyLevel || 'High school';
+  document.getElementById('ob-level').value = state.studyLevel || 'Middelbare school';
+  updateGoalSelection();
+}
+
+function editProfile() {
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.tab-item').forEach(function(t) { t.classList.remove('active'); });
+  document.getElementById('pg-profile-setup').classList.add('active');
+  document.getElementById('tab-bar').style.display = 'none';
+  document.getElementById('ob-name').value = state.name && state.name !== 'Student' ? state.name : '';
+  document.getElementById('ob-age').value = state.age || '';
+  document.getElementById('ob-level').value = state.studyLevel || 'Middelbare school';
   updateGoalSelection();
 }
 
@@ -325,9 +336,9 @@ function goTo(tab) {
 function finishOnboard() {
   var name = document.getElementById('ob-name').value.trim() || 'Student';
   var age = document.getElementById('ob-age').value.trim();
-  var studyLevel = document.getElementById('ob-level').value || 'High school';
+  var studyLevel = document.getElementById('ob-level').value || 'Middelbare school';
   if (!name || name === 'Student') {
-    showToast('Add your name first');
+    showToast('Voeg eerst je naam toe');
     return;
   }
   state.name = name;
@@ -342,12 +353,12 @@ function finishOnboard() {
 
 function updateHome() {
   var h = new Date().getHours();
-  var greet = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  var greet = h < 12 ? 'Goedemorgen' : h < 17 ? 'Goedemiddag' : 'Goedenavond';
   document.getElementById('greeting').textContent = greet + ', ' + (state.name || 'Student').split(' ')[0];
-  document.getElementById('home-sub').textContent = state.streak > 0 ? 'Day ' + state.streak + ' streak - keep it up!' : 'Start your first session today!';
+  document.getElementById('home-sub').textContent = state.streak > 0 ? 'Dag ' + state.streak + ' reeks - ga zo door!' : 'Start vandaag je eerste sessie!';
   document.getElementById('streak-num').textContent = state.streak;
   document.getElementById('xp-display').textContent = state.xp;
-  document.getElementById('level-display').textContent = getLevelName(state.xp);
+  document.getElementById('level-display').textContent = state.studyLevel || 'Middelbare school';
   document.getElementById('sessions-today').textContent = state.sessionsToday;
   document.getElementById('tasks-done').textContent = state.tasks.filter(function(t) { return t.done; }).length;
 
@@ -361,19 +372,19 @@ function updateHome() {
   var upcoming = state.tasks.filter(function(t) { return !t.done; }).slice(0, 3);
   var el = document.getElementById('upcoming-tasks');
   if (!upcoming.length) {
-    el.innerHTML = '<div style="font-size:13px;color:var(--color-text-secondary)">No tasks yet</div>';
+    el.innerHTML = '<div style="font-size:13px;color:var(--color-text-secondary)">Nog geen taken</div>';
     return;
   }
   el.innerHTML = upcoming.map(function(task) {
-    return '<div class="task-item" style="padding:8px 0"><div style="flex:1;font-size:13px">' + esc(task.title) + '</div><span class="pill pill-' + subColor(task.subject) + '">' + esc(task.subject || 'General') + '</span></div>';
+    return '<div class="task-item" style="padding:8px 0"><div style="flex:1;font-size:13px">' + esc(task.title) + '</div><span class="pill pill-' + subColor(task.subject) + '">' + esc(task.subject || 'Algemeen') + '</span></div>';
   }).join('');
 }
 
 function updateProfile() {
   document.getElementById('profile-name').textContent = state.name;
   document.getElementById('avatar-initials').textContent = (state.name || 'S').charAt(0).toUpperCase();
-  document.getElementById('profile-level-lbl').textContent = getLevelName(state.xp) + ' · ' + state.xp + ' XP';
-  document.getElementById('profile-meta-lbl').textContent = 'Age ' + (state.age || '-') + ', Study level ' + (state.studyLevel || '-');
+  document.getElementById('profile-level-lbl').textContent = (state.studyLevel || 'Middelbare school') + ' · ' + state.xp + ' XP';
+  document.getElementById('profile-meta-lbl').textContent = 'Leeftijd ' + (state.age || '-') + ', ' + (state.studyLevel || '-');
   var next = xpToNext(state.xp);
   document.getElementById('xp-next-lbl').textContent = next.cur + ' / ' + next.needed;
   document.getElementById('xp-bar').style.width = Math.min(100, Math.round((next.cur / Math.max(next.needed, 1)) * 100)) + '%';
@@ -383,13 +394,8 @@ function updateProfile() {
   renderSessionLog();
 
   var apiEl = document.getElementById('api-key-status');
-  if (state.apiKey) {
-    apiEl.textContent = 'Set';
-    apiEl.className = 'pill pill-teal';
-  } else {
-    apiEl.textContent = 'Not set';
-    apiEl.className = 'pill pill-amber';
-  }
+  apiEl.textContent = 'Via server';
+  apiEl.className = 'pill pill-teal';
 
   updateThemeButtons();
   updateAuthUI();
@@ -406,36 +412,36 @@ function updateAuthUI() {
   if (!pill || !text || !signInBtn || !signUpBtn || !logoutBtn || !signedInEmail) return;
 
   if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.anonKey) {
-    pill.textContent = 'Setup needed';
+    pill.textContent = 'Setup nodig';
     pill.className = 'pill pill-amber';
-    text.textContent = 'Add your Supabase project URL and anon key in config.js to enable accounts and cross-device sync.';
+    text.textContent = 'Voeg je Supabase project URL en anon key toe in config.js om accounts en synchronisatie in te schakelen.';
     signInBtn.style.display = 'none';
     signUpBtn.style.display = 'none';
     logoutBtn.style.display = 'none';
     signedInEmail.style.display = 'none';
-    if (landingNote) landingNote.textContent = 'Add your Supabase configuration first to enable login and sync.';
+    if (landingNote) landingNote.textContent = 'Voeg eerst je Supabase configuratie toe om in te loggen en te synchroniseren.';
     return;
   }
 
   if (currentUser) {
-    pill.textContent = syncState === 'error' ? 'Sync error' : 'Connected';
+    pill.textContent = syncState === 'error' ? 'Sync fout' : 'Verbonden';
     pill.className = syncState === 'error' ? 'pill pill-coral' : 'pill pill-teal';
-    text.textContent = (currentUser.email || 'Signed in') + '. ' + syncMessage;
+    text.textContent = (currentUser.email || 'Ingelogd') + '. ' + syncMessage;
     signInBtn.style.display = 'none';
     signUpBtn.style.display = 'none';
     logoutBtn.style.display = 'block';
     signedInEmail.style.display = 'block';
-    signedInEmail.textContent = 'Signed in as ' + (currentUser.email || '');
-    if (landingNote) landingNote.textContent = 'You are signed in. Finish your profile to continue.';
+    signedInEmail.textContent = 'Ingelogd als ' + (currentUser.email || '');
+    if (landingNote) landingNote.textContent = 'Je bent ingelogd. Vul je profiel in om door te gaan.';
   } else {
-    pill.textContent = 'Logged out';
+    pill.textContent = 'Uitgelogd';
     pill.className = 'pill pill-amber';
     text.textContent = 'Log in or create an account to enter the app.';
     signInBtn.style.display = 'block';
     signUpBtn.style.display = 'block';
     logoutBtn.style.display = 'none';
     signedInEmail.style.display = 'none';
-    if (landingNote) landingNote.textContent = 'After signing in, we will ask for a few profile details like your name and age.';
+    if (landingNote) landingNote.textContent = 'Na het inloggen vragen we een paar profielgegevens zoals je naam en leeftijd.';
   }
 }
 
@@ -494,18 +500,18 @@ function addXP(amount) {
   save();
   updateHome();
   updateProfile();
-  showToast('+' + amount + ' XP earned!');
+  showToast('+' + amount + ' XP verdiend!');
 }
 
 function toggleTimer() {
   if (state.timerRunning) {
     clearInterval(state.timerInterval);
     state.timerRunning = false;
-    document.getElementById('btn-start').textContent = 'Resume';
+    document.getElementById('btn-start').textContent = 'Hervat';
     return;
   }
   state.timerRunning = true;
-  document.getElementById('btn-start').textContent = 'Pause';
+  document.getElementById('btn-start').textContent = 'Pauzeer';
   state.timerInterval = setInterval(function() {
     state.timerSeconds--;
     updateTimerDisplay();
@@ -552,7 +558,7 @@ function timerComplete() {
   updateStreakCheck();
   save();
   renderSessionLog();
-  document.getElementById('session-complete-msg').textContent = 'You studied ' + subject + ' for ' + durationMin + ' minutes. +' + xpEarned + ' XP!';
+  document.getElementById('session-complete-msg').textContent = 'Je hebt ' + subject + ' gestudeerd voor ' + durationMin + ' minuten. +' + xpEarned + ' XP!';
   document.getElementById('session-modal').style.display = 'flex';
   document.getElementById('btn-start').textContent = 'Start';
   updateHome();
@@ -568,7 +574,7 @@ function addTask() {
   var input = document.getElementById('new-task-input');
   var value = input.value.trim();
   if (!value) return;
-  state.tasks.push({ title: value, subject: 'General', done: false, created: Date.now() });
+  state.tasks.push({ title: value, subject: 'Algemeen', done: false, created: Date.now() });
   input.value = '';
   save();
   renderTasks();
@@ -611,7 +617,7 @@ function renderTasks() {
   });
   var el = document.getElementById('task-list');
   if (!list.length) {
-    el.innerHTML = '<div style="font-size:13px;color:var(--color-text-secondary);padding:8px 0">No tasks here</div>';
+    el.innerHTML = '<div style="font-size:13px;color:var(--color-text-secondary);padding:8px 0">Geen taken hier</div>';
     return;
   }
   el.innerHTML = list.map(function(task) {
@@ -655,7 +661,7 @@ function renderNotes() {
     return;
   }
   el.innerHTML = state.notes.map(function(note, idx) {
-    return '<div class="note-card" onclick="openNoteEditor(' + idx + ')"><div class="note-title">' + esc(note.title) + '</div><div class="note-preview">' + esc(note.body || 'Empty note') + '</div></div>';
+    return '<div class="note-card" onclick="openNoteEditor(' + idx + ')"><div class="note-title">' + esc(note.title) + '</div><div class="note-preview">' + esc(note.body || 'Lege notitie') + '</div></div>';
   }).join('');
 }
 
@@ -666,7 +672,7 @@ function explainNote() {
     return;
   }
   goTo('ai');
-  document.getElementById('chat-input').value = 'Please explain these notes and highlight the key points:\n\n' + body.slice(0, 400);
+  document.getElementById('chat-input').value = 'Leg deze notities uit en licht de belangrijkste punten toe:\n\n' + body.slice(0, 400);
   sendMessage();
 }
 
@@ -706,29 +712,19 @@ function removeTyping() {
   if (indicator) indicator.remove();
 }
 
-async function callGeminiApi(prompt, apiKey) {
-  var resp = null;
-  var data = null;
-  var lastApiError = '';
-  for (var i = 0; i < GEMINI_MODELS.length; i++) {
-    var endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/' + GEMINI_MODELS[i] + ':generateContent';
-    resp = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey
-      },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.6, maxOutputTokens: 600 }
-      })
-    });
-    data = await resp.json();
-    if (resp.ok) return { ok: true, data: data, model: GEMINI_MODELS[i] };
-    lastApiError = data && data.error && data.error.message ? data.error.message : 'Unknown API error';
-    if (resp.status !== 404) break;
-  }
-  return { ok: false, data: data, error: lastApiError || ((data && data.error && data.error.message) ? data.error.message : 'Unknown API error') };
+async function callGeminiApi(prompt) {
+  var resp = await fetch('/api/tutor', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      prompt: prompt
+    })
+  });
+  var data = await resp.json();
+  if (resp.ok) return { ok: true, data: data, model: data.model || 'server' };
+  return { ok: false, data: data, error: (data && data.error) ? data.error : 'Onbekende serverfout' };
 }
 
 async function sendMessage() {
@@ -741,24 +737,19 @@ async function sendMessage() {
   if (state.chatHistory.length > 20) state.chatHistory = state.chatHistory.slice(-20);
   addXP(5);
 
-  if (!state.apiKey) {
-    addBubble('ai', 'No API key set yet! Go to Profile > Settings to add your Google AI Studio API key. Once added, I can answer any question step by step.');
-    return;
-  }
-
   addTyping();
   var subject = document.getElementById('ai-subject').value;
-  var systemPrompt = 'You are Study Buddy, a friendly and patient AI tutor for high school and college students. Your goal is to help students understand concepts, not just give answers.\n\nRules:\n1. Never just give the final answer. Explain the reasoning process first.\n2. Use simple language. Define any jargon.\n3. Give concrete examples and analogies.\n4. Be warm and encouraging.\n5. After explaining, ask a check-in question.\n6. If asked to write an essay outright, redirect: "Let\'s build this together - start with an outline."\n\nThe student is currently studying: ' + subject + '.';
+  var systemPrompt = 'Je bent Studiemaatje, een vriendelijke en geduldige AI tutor voor leerlingen van middelbare school en mbo/hbo/universiteit. Je doel is leerlingen helpen concepten te begrijpen, niet alleen antwoorden geven.\n\nRegels:\n1. Geef nooit zomaar het eindantwoord. Leg eerst de redenering uit.\n2. Gebruik eenvoudige taal. Leg moeilijke woorden uit.\n3. Geef concrete voorbeelden en analogieën.\n4. Wees warm en aanmoedigend.\n5. Na het uitleggen, stel een controlevraag.\n6. Als gevraagd wordt om een essay te schrijven, stuur dan: "Laten we dit samen opbouwen - begin met een outline."\n\nDe leerling studeert nu: ' + subject + '.';
   var historyText = state.chatHistory.map(function(item) {
     return (item.role === 'assistant' ? 'Tutor' : 'Student') + ': ' + item.content;
   }).join('\n');
   var prompt = systemPrompt + '\n\nConversation so far:\n' + historyText + '\n\nNow respond as the tutor to the latest student message only.';
 
   try {
-    var result = await callGeminiApi(prompt, state.apiKey);
+    var result = await callGeminiApi(prompt);
     removeTyping();
     if (!result.ok) {
-      addBubble('ai', 'API error: ' + result.error + '. Check your API key in Profile and make sure your Gemini API key is enabled in Google AI Studio.');
+      addBubble('ai', 'API fout: ' + result.error + '. Controleer je API-sleutel in Profiel en zorg dat je Gemini API-sleutel is ingeschakeld in Google AI Studio.');
       return;
     }
     var reply = ((result.data.candidates || [])[0] && (((result.data.candidates || [])[0].content || {}).parts || [])[0]);
@@ -767,13 +758,13 @@ async function sendMessage() {
       state.chatHistory.push({ role: 'assistant', content: reply.text });
       save();
     } else if (result.data.error) {
-      addBubble('ai', 'API error: ' + result.data.error.message + '. Check your API key in Profile.');
+      addBubble('ai', 'API fout: ' + result.data.error.message + '. Controleer je API-sleutel in Profiel.');
     } else {
-      addBubble('ai', 'I could not generate a response this time. Please try again.');
+      addBubble('ai', 'Ik kon dit keer geen antwoord genereren. Probeer het opnieuw.');
     }
   } catch (e) {
     removeTyping();
-    addBubble('ai', 'Could not reach the AI. Check your API key and internet connection.');
+    addBubble('ai', 'Kon de AI niet bereiken. Controleer je API-sleutel en internetverbinding.');
   }
 }
 
@@ -786,8 +777,8 @@ function setApiTestStatus(msg, color) {
 
 function showApiModal() {
   document.getElementById('api-modal').style.display = 'flex';
-  if (state.apiKey) document.getElementById('api-key-input').value = state.apiKey;
-  setApiTestStatus('');
+  document.getElementById('api-key-input').value = '';
+  setApiTestStatus('De API-sleutel staat op de server en is niet zichtbaar in de browser.');
 }
 
 function closeApiModal() {
@@ -797,35 +788,25 @@ function closeApiModal() {
 
 async function testApiKey() {
   var buttons = document.querySelectorAll('#api-modal button');
-  var input = document.getElementById('api-key-input');
-  var key = input.value.trim();
-  if (!key) {
-    setApiTestStatus('Enter a Google AI Studio API key first.', 'var(--amber)');
-    return;
-  }
   buttons.forEach(function(btn) { btn.disabled = true; });
-  setApiTestStatus('Testing key...', 'var(--color-text-secondary)');
+  setApiTestStatus('Serververbinding testen...', 'var(--color-text-secondary)');
   try {
-    var result = await callGeminiApi('Reply with exactly: API key works.', key);
+    var result = await callGeminiApi('Antwoord exact met: Serververbinding werkt.');
     if (result.ok) {
-      setApiTestStatus('Key works. Connected with ' + result.model + '.', 'var(--teal)');
-      showToast('API key test passed');
+      setApiTestStatus('Server werkt. Verbonden met ' + result.model + '.', 'var(--teal)');
+      showToast('AI-server werkt');
     } else {
-      setApiTestStatus('Test failed: ' + result.error, 'var(--coral)');
+      setApiTestStatus('Test mislukt: ' + result.error, 'var(--coral)');
     }
   } catch (e) {
-    setApiTestStatus('Test failed. Check your connection and try again.', 'var(--coral)');
+    setApiTestStatus('Test mislukt. Controleer je verbinding en probeer opnieuw.', 'var(--coral)');
   } finally {
     buttons.forEach(function(btn) { btn.disabled = false; });
   }
 }
 
 function saveApiKey() {
-  state.apiKey = document.getElementById('api-key-input').value.trim();
-  save();
   closeApiModal();
-  updateProfile();
-  showToast(state.apiKey ? 'API key saved!' : 'API key cleared');
 }
 
 function setAuthModalStatus(msg, color) {
@@ -837,11 +818,11 @@ function setAuthModalStatus(msg, color) {
 
 function showAuthModal(mode) {
   authMode = mode === 'signin' ? 'signin' : 'signup';
-  document.getElementById('auth-modal-title').textContent = authMode === 'signin' ? 'Sign in' : 'Create account';
+  document.getElementById('auth-modal-title').textContent = authMode === 'signin' ? 'Inloggen' : 'Account maken';
   document.getElementById('auth-modal-sub').textContent = authMode === 'signin'
-    ? 'Sign in to load your Study Buddy progress on this device.'
-    : 'Create an account to sync your Study Buddy progress across devices.';
-  document.getElementById('auth-submit-btn').textContent = authMode === 'signin' ? 'Sign in' : 'Create account';
+    ? 'Log in om je Studiemaatje voortgang op dit apparaat te laden.'
+    : 'Maak een account om je Studiemaatje voortgang te synchroniseren tussen apparaten.';
+  document.getElementById('auth-submit-btn').textContent = authMode === 'signin' ? 'Inloggen' : 'Account maken';
   document.getElementById('auth-modal').style.display = 'flex';
   setAuthModalStatus('');
 }
@@ -853,24 +834,24 @@ function closeAuthModal() {
 
 async function submitAuth() {
   if (!supabaseClient) {
-    setAuthModalStatus('Cloud sync is not configured yet. Add your Supabase credentials in config.js.', 'var(--coral)');
+    setAuthModalStatus('Cloud synchronisatie is nog niet geconfigureerd. Voeg je Supabase gegevens toe in config.js.', 'var(--coral)');
     return;
   }
 
   var email = document.getElementById('auth-email-input').value.trim();
   var password = document.getElementById('auth-password-input').value;
   if (!email || !password) {
-    setAuthModalStatus('Enter both email and password.', 'var(--amber)');
+    setAuthModalStatus('Voer zowel e-mail als wachtwoord in.', 'var(--amber)');
     return;
   }
   if (password.length < 6) {
-    setAuthModalStatus('Use a password of at least 6 characters.', 'var(--amber)');
+    setAuthModalStatus('Gebruik een wachtwoord van minimaal 6 tekens.', 'var(--amber)');
     return;
   }
 
   var submitBtn = document.getElementById('auth-submit-btn');
   submitBtn.disabled = true;
-  setAuthModalStatus(authMode === 'signin' ? 'Signing in...' : 'Creating account...', 'var(--color-text-secondary)');
+  setAuthModalStatus(authMode === 'signin' ? 'Inloggen...' : 'Account maken...', 'var(--color-text-secondary)');
 
   try {
     if (authMode === 'signin') {
@@ -878,20 +859,20 @@ async function submitAuth() {
       var signInResult = await supabaseClient.auth.signInWithPassword({ email: email, password: password });
       if (signInResult.error) throw signInResult.error;
       closeAuthModal();
-      showToast('Signed in successfully');
+      showToast('Succesvol ingelogd');
     } else {
       pendingGuestMigration = hasMeaningfulProgress(getGuestState());
       var signUpResult = await supabaseClient.auth.signUp({ email: email, password: password });
       if (signUpResult.error) throw signUpResult.error;
       if (!signUpResult.data.session) {
-        setAuthModalStatus('Account created. Check your email to confirm, then sign in.', 'var(--teal)');
+        setAuthModalStatus('Account aangemaakt. Controleer je e-mail om te bevestigen, dan kun je inloggen.', 'var(--teal)');
       } else {
         closeAuthModal();
-        showToast('Account created');
+        showToast('Account aangemaakt');
       }
     }
   } catch (e) {
-    setAuthModalStatus(e.message || 'Authentication failed.', 'var(--coral)');
+    setAuthModalStatus(e.message || 'Authenticatie mislukt.', 'var(--coral)');
   } finally {
     submitBtn.disabled = false;
   }
@@ -901,15 +882,15 @@ async function logoutUser() {
   if (!supabaseClient) return;
   try {
     await supabaseClient.auth.signOut();
-    showToast('Logged out');
+    showToast('Uitgelogd');
   } catch (e) {
-    showToast('Could not log out right now');
+    showToast('Kon nu niet uitloggen');
   }
 }
 
 async function saveRemoteState() {
   if (!currentUser || !supabaseClient || isHydratingRemoteState) return;
-  setSyncStatus('syncing', 'Saving your progress to the cloud...');
+  setSyncStatus('syncing', 'Voortgang opslaan naar de cloud...');
   var result = await supabaseClient
     .from('profiles')
     .upsert({
@@ -920,7 +901,7 @@ async function saveRemoteState() {
     }, { onConflict: 'user_id' });
 
   if (result.error) {
-    setSyncStatus('error', result.error.message || 'Could not sync your progress.');
+    setSyncStatus('error', result.error.message || 'Kon je voortgang niet synchroniseren.');
     return;
   }
   setSyncStatus('connected', 'Your progress is synced and available on your other devices.');
@@ -940,7 +921,7 @@ async function loadRemoteStateForUser(user) {
 async function adoptUserState(user) {
   currentUser = user;
   isHydratingRemoteState = true;
-  setSyncStatus('syncing', 'Loading your saved progress...');
+  setSyncStatus('syncing', 'Je opgeslagen voortgang laden...');
 
   try {
     var remoteState = await loadRemoteStateForUser(user);
@@ -967,7 +948,7 @@ async function adoptUserState(user) {
     var fallback = loadLocalState(user) || createDefaultState();
     setState(fallback);
     renderAll();
-    setSyncStatus('error', e.message || 'Could not load your cloud data.');
+    setSyncStatus('error', e.message || 'Kon je cloudgegevens niet laden.');
   } finally {
     pendingGuestMigration = false;
     isHydratingRemoteState = false;
@@ -1012,7 +993,7 @@ function esc(s) {
 }
 
 function subColor(subject) {
-  var map = { Math: 'purple', Science: 'teal', History: 'amber', English: 'coral', Chemistry: 'teal', Biology: 'green', General: 'purple' };
+  var map = { Wiskunde: 'purple', Natuurkunde: 'teal', Scheikunde: 'amber', Biologie: 'green', Geschiedenis: 'coral', Nederlands: 'teal', Algemeen: 'purple' };
   return map[subject] || 'purple';
 }
 
