@@ -304,7 +304,8 @@ function ensureAppShell() {
   document.getElementById('pg-auth-landing').classList.remove('active');
   document.getElementById('pg-profile-setup').classList.remove('active');
   document.getElementById('tab-bar').style.display = 'flex';
-  goTo(getActiveTabName());
+  var tab = getActiveTabName();
+  goTo(tab && tab !== 'auth-landing' && tab !== 'profile-setup' ? tab : 'home');
 }
 
 function renderAll() {

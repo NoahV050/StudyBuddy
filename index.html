@@ -34,10 +34,11 @@
           <div class="onboard-icon">SB</div>
           <div class="onboard-title">Studiemaatje</div>
           <div class="onboard-sub">Log in en ga verder waar je was gebleven.</div>
+          <div class="onboard-sub" id="auth-landing-note" style="font-size:12px;margin-top:8px">Na het inloggen vragen we een paar profielgegevens zoals je naam en leeftijd.</div>
         </div>
         <div style="padding:0 16px;display:flex;flex-direction:column;gap:12px">
-          <button class="btn btn-sm" onclick="showAuthModal('signin')">Inloggen</button>
-          <button class="btn btn-sm btn-primary" onclick="showAuthModal('signup')">Account maken</button>
+          <button class="btn" onclick="showAuthModal('signin')" id="signin-btn">Inloggen</button>
+          <button class="btn btn-primary" onclick="showAuthModal('signup')" id="signup-btn">Account maken</button>
         </div>
       </div>
 
@@ -216,11 +217,19 @@
         <div class="badge-grid" id="badge-grid"></div>
         <div class="sec-hdr" style="margin-top:16px">Thema</div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-sm theme-btn" onclick="setTheme('light')">Licht</button>
-          <button class="btn btn-sm theme-btn" onclick="setTheme('dark')">Donker</button>
+          <button class="btn btn-sm theme-btn" id="theme-light-btn" onclick="setTheme('light')">Licht</button>
+          <button class="btn btn-sm theme-btn" id="theme-dark-btn" onclick="setTheme('dark')">Donker</button>
         </div>
         <div class="sec-hdr" style="margin-top:12px">API-sleutel</div>
-        <button class="btn btn-full btn-sm" onclick="showApiModal()">Google AI Studio API instellen</button>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span class="pill" id="api-key-status">Via server</span>
+          <button class="btn btn-full btn-sm" onclick="showApiModal()">Google AI Studio API instellen</button>
+        </div>
+        <div class="sec-hdr" style="margin-top:12px">Account</div>
+        <div class="pill" id="auth-status-pill" style="margin-bottom:4px">Uitgelogd</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:12px" id="auth-status-text">Log in or create an account.</div>
+        <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:12px" id="signed-in-email"></div>
+        <button class="btn btn-full" onclick="logoutUser()" id="logout-btn" style="display:none">Uitloggen</button>
       </div>
 
     </div>
@@ -271,6 +280,20 @@
         <div class="modal-title">Sessie afgerond!</div>
         <div style="font-size:13px;color:var(--color-text-secondary);margin:6px 0 14px" id="session-complete-msg">Goed bezig!</div>
         <button class="btn btn-primary btn-full" onclick="closeSessionModal()">XP ontvangen</button>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="auth-modal" style="display:none">
+      <div class="modal-box">
+        <div class="modal-title" id="auth-modal-title">Inloggen</div>
+        <div class="modal-sub" id="auth-modal-sub">Log in om je voortgang te laden.</div>
+        <input class="modal-input" id="auth-email-input" type="email" placeholder="E-mailadres">
+        <input class="modal-input" id="auth-password-input" type="password" placeholder="Wachtwoord">
+        <div id="auth-modal-status" style="font-size:12px;margin-bottom:10px"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" onclick="closeAuthModal()">Annuleren</button>
+          <button class="btn btn-primary" id="auth-submit-btn" onclick="submitAuth()">Inloggen</button>
+        </div>
       </div>
     </div>
   </div>
