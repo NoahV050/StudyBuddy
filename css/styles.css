@@ -24,14 +24,13 @@
   --color-border-tertiary:#4B5563;
   --purple-light:#26215C;
 }
-html,body{height:100%;overflow:hidden}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:16px;color:var(--color-text-primary);line-height:1.5;background:var(--color-background-secondary)}
+html,body{width:100%;height:100%;margin:0;padding:0;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:16px;color:var(--color-text-primary);line-height:1.5;background:var(--color-background-primary)}
 
 #phone{
-  position:fixed;
-  inset:0;
+  position:absolute;
+  top:0;left:0;right:0;bottom:0;
   width:100%;
-  max-width:100%;
   height:100%;
   background:var(--color-background-primary);
   overflow:hidden;
@@ -57,7 +56,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;f
   flex-direction:column;
   min-height:0;
   -webkit-overflow-scrolling:touch;
-  padding-bottom:var(--safe-bottom);
+  padding-bottom:var(--safe-bottom, 0px);
 }
 .screen::-webkit-scrollbar{width:0}
 .tab-bar{
@@ -65,7 +64,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;f
   border-top:0.5px solid var(--color-border-tertiary);
   background:var(--color-background-primary);
   flex-shrink:0;
-  padding:8px 6px calc(12px + var(--safe-bottom)) 6px;
+  padding:8px 6px calc(12px + var(--safe-bottom, 0px)) 6px;
   gap:2px;
 }
 .tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:4px 0;transition:opacity .15s}
