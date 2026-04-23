@@ -714,7 +714,7 @@ function removeTyping() {
 }
 
 async function callGeminiApi(prompt) {
-  var resp = await fetch('/api/tutor', {
+  var resp = await fetch('/api/chat', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -724,8 +724,8 @@ async function callGeminiApi(prompt) {
     })
   });
   var data = await resp.json();
-  if (resp.ok) return { ok: true, data: data, model: data.model || 'server' };
-  return { ok: false, data: data, error: (data && data.error) ? data.error : 'Onbekende serverfout' };
+  if (resp.ok) return { ok: true, data: data };
+  return { ok: false, data: data, error: (data && data.error) ? data.error : 'Server fout' };
 }
 
 async function sendMessage() {
@@ -746,26 +746,24 @@ async function sendMessage() {
   }).join('\n');
   var prompt = systemPrompt + '\n\nConversation so far:\n' + historyText + '\n\nNow respond as the tutor to the latest student message only.';
 
-  try {
+try {
     var result = await callGeminiApi(prompt);
     removeTyping();
     if (!result.ok) {
-      addBubble('ai', 'API fout: ' + result.error + '. Controleer je API-sleutel in Profiel en zorg dat je Gemini API-sleutel is ingeschakeld in Google AI Studio.');
+      addBubble('ai', 'Fout: ' + (result.data.error || 'Kon AI niet bereiken'));
       return;
     }
-    var reply = ((result.data.candidates || [])[0] && (((result.data.candidates || [])[0].content || {}).parts || [])[0]);
-    if (reply && reply.text) {
-      addBubble('ai', reply.text);
-      state.chatHistory.push({ role: 'assistant', content: reply.text });
+    var reply = result.data.reply;
+    if (reply) {
+      addBubble('ai', reply);
+      state.chatHistory.push({ role: 'assistant', content: reply });
       save();
-    } else if (result.data.error) {
-      addBubble('ai', 'API fout: ' + result.data.error.message + '. Controleer je API-sleutel in Profiel.');
     } else {
       addBubble('ai', 'Ik kon dit keer geen antwoord genereren. Probeer het opnieuw.');
     }
   } catch (e) {
     removeTyping();
-    addBubble('ai', 'Kon de AI niet bereiken. Controleer je API-sleutel en internetverbinding.');
+    addBubble('ai', 'Kon de AI niet bereiken. Controleer je verbinding.');
   }
 }
 
