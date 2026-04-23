@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Buddy</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div style="position:relative;padding:12px 0">
+  <div class="phone" id="phone" style="position:relative">
+    <div class="status-bar">
+      <span id="clock">9:41</span>
+      <span>Study Buddy</span>
+      <span>100%</span>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="screen" id="screen">
+
+      <!-- AUTH LANDING -->
+      <div class="page active" id="pg-auth-landing" style="justify-content:center">
+        <div class="landing-topbar">
+          <div class="landing-badge">Study flow</div>
+          <div class="landing-theme-toggle">
+            <button class="btn btn-sm theme-btn" id="landing-theme-light-btn" onclick="setTheme('light')">Light</button>
+            <button class="btn btn-sm theme-btn" id="landing-theme-dark-btn" onclick="setTheme('dark')">Dark</button>
+          </div>
+        </div>
+        <div class="onboard-hero">
+          <div class="onboard-icon">SB</div>
+          <div class="onboard-title">Study Buddy</div>
+          <div class="onboard-sub">Log in to your account and continue your study progress on web or phone without losing your place.</div>
+        </div>
+        <div style="padding:0 8px;display:flex;flex-direction:column;gap:10px">
+          <div class="card" style="text-align:left">
+            <div style="font-size:13px;font-weight:500;margin-bottom:4px">Pick up where you left off</div>
+            <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.6">Your tasks, notes, focus streaks, and tutor history stay tied to your account.</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-sm" style="flex:1" onclick="showAuthModal('signin')">Log in</button>
+            <button class="btn btn-sm btn-primary" style="flex:1" onclick="showAuthModal('signup')">Sign up</button>
+          </div>
+          <div style="text-align:center;font-size:12px;color:var(--color-text-secondary)" id="auth-landing-note">After signing in, we will ask for a few profile details like your name and age.</div>
+        </div>
+      </div>
+
+      <!-- PROFILE SETUP -->
+      <div class="page" id="pg-profile-setup" style="justify-content:center">
+        <div class="onboard-hero">
+          <div class="onboard-icon">Me</div>
+          <div class="onboard-title">Create your profile</div>
+          <div class="onboard-sub">Keep it simple: just enough detail to make your account feel personal.</div>
+        </div>
+        <div style="padding:0 8px;display:flex;flex-direction:column;gap:10px">
+          <div>
+            <div class="sec-hdr">Your name</div>
+            <input id="ob-name" placeholder="e.g. Alex" style="width:100%;padding:10px 12px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:14px;font-family:inherit;outline:none">
+          </div>
+          <div>
+            <div class="sec-hdr">Age</div>
+            <input id="ob-age" type="number" min="8" max="99" placeholder="e.g. 16" style="width:100%;padding:10px 12px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:14px;font-family:inherit;outline:none">
+          </div>
+          <div>
+            <div class="sec-hdr">Study level</div>
+            <select id="ob-level" style="width:100%;padding:10px 12px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:14px;font-family:inherit;outline:none">
+              <option value="High school">High school</option>
+              <option value="College">College</option>
+              <option value="University">University</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <div class="sec-hdr">Daily study goal</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap" id="goal-btns">
+              <button class="btn btn-sm goal-btn" data-val="60" onclick="selectGoal(this)">1 hr</button>
+              <button class="btn btn-sm goal-btn active-goal" data-val="120" onclick="selectGoal(this)">2 hrs</button>
+              <button class="btn btn-sm goal-btn" data-val="180" onclick="selectGoal(this)">3 hrs</button>
+              <button class="btn btn-sm goal-btn" data-val="240" onclick="selectGoal(this)">4 hrs</button>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-full" style="margin-top:4px" onclick="finishOnboard()">Save profile</button>
+        </div>
+      </div>
+
+      <!-- HOME -->
+      <div class="page" id="pg-home">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+          <div>
+            <div class="page-title" id="greeting">Good morning</div>
+            <div class="page-sub" id="home-sub">Ready to study?</div>
+          </div>
+          <div class="streak-fire" id="streak-display">Streak <span id="streak-num">0</span></div>
+        </div>
+
+        <div class="card" style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span style="font-size:13px;font-weight:500">Today's goal</span>
+            <span style="font-size:12px;color:var(--color-text-secondary)" id="goal-progress-txt">0 / 2h</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" id="goal-bar" style="width:0%"></div></div>
+          <div style="margin-top:10px">
+            <button class="btn btn-primary btn-full" onclick="goTo('focus')">Start focus session</button>
+          </div>
+        </div>
+
+        <div class="metric-row">
+          <div class="metric-box">
+            <div class="metric-label">XP total</div>
+            <div class="metric-val" id="xp-display">0</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">Level</div>
+            <div class="metric-val" id="level-display">Freshman</div>
+          </div>
+        </div>
+        <div class="metric-row">
+          <div class="metric-box">
+            <div class="metric-label">Sessions today</div>
+            <div class="metric-val" id="sessions-today">0</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">Tasks done</div>
+            <div class="metric-val" id="tasks-done">0</div>
+          </div>
+        </div>
+
+        <div class="sec-hdr" style="margin-top:6px">Upcoming tasks</div>
+        <div class="card" id="upcoming-tasks">
+          <div style="font-size:13px;color:var(--color-text-secondary)">No tasks yet - add some in Tasks</div>
+        </div>
+
+        <div style="margin-top:10px">
+          <button class="btn btn-full" onclick="goTo('ai')">Ask AI tutor a question</button>
+        </div>
+      </div>
+
+      <!-- FOCUS -->
+      <div class="page" id="pg-focus" style="align-items:center">
+        <div style="width:100%">
+          <div class="page-title">Focus timer</div>
+          <div class="page-sub" id="focus-sub">Choose a session type below</div>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:20px;width:100%">
+          <button class="btn btn-sm" id="mode-pomo" onclick="setMode('pomo')" style="flex:1">Pomodoro 25m</button>
+          <button class="btn btn-sm" id="mode-short" onclick="setMode('short')" style="flex:1">Short 10m</button>
+          <button class="btn btn-sm" id="mode-long" onclick="setMode('long')" style="flex:1">Deep 50m</button>
+        </div>
+
+        <div class="timer-ring">
+          <svg width="180" height="180" viewBox="0 0 180 180">
+            <circle class="timer-ring-bg" cx="90" cy="90" r="82"/>
+            <circle class="timer-ring-fill" cx="90" cy="90" r="82" id="timer-arc"
+              stroke-dasharray="515" stroke-dashoffset="0"/>
+          </svg>
+          <div class="timer-center">
+            <div class="timer-time" id="timer-display">25:00</div>
+            <div class="timer-mode" id="timer-mode-lbl">Work</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;width:100%;max-width:260px;margin-bottom:20px">
+          <button class="btn" id="btn-start" onclick="toggleTimer()" style="flex:2">Start</button>
+          <button class="btn" onclick="resetTimer()" style="flex:1">Reset</button>
+        </div>
+
+        <div style="width:100%">
+          <div class="sec-hdr">Subject (optional)</div>
+          <select id="focus-subject" style="width:100%;padding:8px 10px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:13px;font-family:inherit">
+            <option>Math</option><option>Science</option><option>History</option><option>English</option><option>Other</option>
+          </select>
+        </div>
+
+        <div style="width:100%;margin-top:14px">
+          <div class="sec-hdr">Today's sessions</div>
+          <div id="sessions-log" style="font-size:13px;color:var(--color-text-secondary)">No sessions yet</div>
+        </div>
+      </div>
+
+      <!-- AI TUTOR -->
+      <div class="page" id="pg-ai" style="padding:0;gap:0">
+        <div style="padding:14px 14px 8px;flex-shrink:0">
+          <div class="page-title">AI tutor</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <select id="ai-subject" style="flex:1;padding:5px 8px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:12px;font-family:inherit">
+              <option>Math</option><option>Science</option><option>History</option><option>English</option><option>Other</option>
+            </select>
+            <button class="btn btn-sm" onclick="clearChat()">Clear</button>
+          </div>
+        </div>
+        <div class="quick-chips">
+          <button class="chip" onclick="sendChip('Explain this concept step by step')">Explain step-by-step</button>
+          <button class="chip" onclick="sendChip('Give me a simple example')">Give example</button>
+          <button class="chip" onclick="sendChip('Quiz me on this topic')">Quiz me</button>
+          <button class="chip" onclick="sendChip('Summarize what I need to know')">Summarize</button>
+        </div>
+        <div class="chat-area" id="chat-area">
+          <div class="bubble ai">Hi! I'm your Study Buddy tutor. Ask me anything - I'll guide you through it step by step, not just give you answers.</div>
+        </div>
+        <div class="chat-input-row">
+          <input id="chat-input" placeholder="Ask a question..." onkeydown="if(event.key==='Enter')sendMessage()">
+          <button class="send-btn" onclick="sendMessage()">
+            <svg width="14" height="14" viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- TASKS -->
+      <div class="page" id="pg-tasks">
+        <div class="page-title">Tasks</div>
+        <div class="page-sub">Track your assignments and deadlines</div>
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <button class="btn btn-sm" id="filter-all" onclick="filterTasks('all')" style="font-weight:500">All</button>
+          <button class="btn btn-sm" id="filter-todo" onclick="filterTasks('todo')">To do</button>
+          <button class="btn btn-sm" id="filter-done" onclick="filterTasks('done')">Done</button>
+        </div>
+        <div class="card" style="flex:1">
+          <div id="task-list"></div>
+          <div class="add-task-row">
+            <input id="new-task-input" placeholder="Add a task..." onkeydown="if(event.key==='Enter')addTask()">
+            <button class="btn btn-sm" onclick="addTask()">Add</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- NOTES -->
+      <div class="page" id="pg-notes">
+        <div class="page-title">Notes</div>
+        <div class="page-sub">Quick capture &amp; AI explanations</div>
+        <div id="notes-list-view">
+          <button class="btn btn-primary btn-full" style="margin-bottom:10px" onclick="openNoteEditor(-1)">+ New note</button>
+          <div id="notes-list"></div>
+        </div>
+        <div id="notes-editor-view" style="display:none;flex:1;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-sm" onclick="closeNoteEditor()">Back</button>
+            <input id="note-title-input" placeholder="Title" style="flex:1;padding:6px 10px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:14px;font-family:inherit;outline:none">
+            <button class="btn btn-sm" onclick="saveNote()">Save</button>
+          </div>
+          <textarea id="note-body-input" placeholder="Write your notes here..." style="flex:1;font-family:inherit;font-size:13px;padding:10px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);resize:none;outline:none;min-height:200px"></textarea>
+          <button class="btn btn-full" onclick="explainNote()">Explain these notes with AI</button>
+        </div>
+      </div>
+
+      <!-- PROFILE -->
+      <div class="page" id="pg-profile">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <div style="width:48px;height:48px;border-radius:50%;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:500;color:#3C3489" id="avatar-initials">A</div>
+          <div>
+            <div style="font-size:16px;font-weight:500" id="profile-name">Student</div>
+            <div style="font-size:12px;color:var(--color-text-secondary)" id="profile-level-lbl">Freshman - 0 XP</div>
+            <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px" id="profile-meta-lbl">Age -, Study level -</div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:13px;font-weight:500">XP to next level</span>
+            <span style="font-size:12px;color:var(--color-text-secondary)" id="xp-next-lbl">0 / 200</span>
+          </div>
+          <div class="xp-bar-track"><div class="xp-bar-fill" id="xp-bar" style="width:0%"></div></div>
+        </div>
+
+        <div class="sec-hdr">This week's focus (hours/day)</div>
+        <div class="card" style="margin-bottom:10px">
+          <div id="bar-chart-wrap"></div>
+        </div>
+
+        <div class="sec-hdr">Badges</div>
+        <div class="badge-grid" id="badge-grid"></div>
+
+        <div style="margin-top:14px">
+          <div class="sec-hdr">Account</div>
+          <div class="card" style="margin-bottom:10px">
+            <div style="font-size:13px;margin-bottom:6px">Sync status <span class="pill pill-amber" id="auth-status-pill">Guest</span></div>
+            <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px" id="auth-status-text">Your data is currently stored only on this device.</div>
+            <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px;display:none" id="signed-in-email"></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-sm" style="flex:1" onclick="showAuthModal('signin')" id="signin-btn">Sign in</button>
+              <button class="btn btn-sm btn-primary" style="flex:1" onclick="showAuthModal('signup')" id="signup-btn">Create account</button>
+            </div>
+            <button class="btn btn-full btn-sm" style="margin-top:8px;display:none" onclick="logoutUser()" id="logout-btn">Log out</button>
+          </div>
+          <div class="sec-hdr">Settings</div>
+          <div class="card">
+            <div style="font-size:13px;margin-bottom:8px">Theme</div>
+            <div style="display:flex;gap:8px;margin-bottom:10px">
+              <button class="btn btn-sm theme-btn" id="theme-light-btn" onclick="setTheme('light')" style="flex:1">Light</button>
+              <button class="btn btn-sm theme-btn" id="theme-dark-btn" onclick="setTheme('dark')" style="flex:1">Dark</button>
+            </div>
+            <div style="font-size:13px;margin-bottom:8px">API key <span class="pill pill-purple" id="api-key-status">Not set</span></div>
+            <button class="btn btn-full btn-sm" onclick="showApiModal()">Set Google AI Studio API key</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tab-bar" id="tab-bar" style="display:none">
+      <div class="tab-item active" id="tab-home" onclick="goTo('home')">
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.8 12 3l9 7.8v9.7a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1z"/></svg>
+        </div><div class="tab-label">Home</div>
+      </div>
+      <div class="tab-item" id="tab-focus" onclick="goTo('focus')">
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9h-3.2a5.8 5.8 0 1 1-1.7-4.1L18 6A8.9 8.9 0 0 0 12 3zm7.7 0L14 8.7V10h1.3L21 4.3z"/></svg>
+        </div><div class="tab-label">Focus</div>
+      </div>
+      <div class="tab-item" id="tab-ai" onclick="goTo('ai')">
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 14 7l4.9.5-3.7 3.2 1.1 4.8L12 13.1 7.7 15.5l1.1-4.8L5.1 7.5 10 7zM5 14.5l1.2 2.6L9 18.3l-2.1 1.8.6 2.7L5 21.4l-2.5 1.4.6-2.7L1 18.3l2.8-.2zm14 0 1.2 2.6 2.8.2-2.1 1.8.6 2.7-2.5-1.4-2.5 1.4.6-2.7-2.1-1.8 2.8-.2z"/></svg>
+        </div><div class="tab-label">Tutor</div>
+      </div>
+      <div class="tab-item" id="tab-tasks" onclick="goTo('tasks')">
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.2 17.6 4.8 13.2l1.7-1.7 2.7 2.7 8.3-8.3 1.7 1.7zM4 5h11v2H4zm0 12h7v2H4z"/></svg>
+        </div><div class="tab-label">Tasks</div>
+      </div>
+      <div class="tab-item" id="tab-notes" onclick="goTo('notes')">
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h9.5L20 8v12a.5.5 0 0 1-.5.5h-13A.5.5 0 0 1 6 20zM14.5 4.9V9H18zM8 12h8v1.8H8zm0 3.5h8v1.8H8z"/></svg>
+        </div><div class="tab-label">Notes</div>
+      </div>
+      <div class="tab-item" id="tab-profile" onclick="goTo('profile')">
+        <div class="tab-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4.2 4.2 0 1 0-4.2-4.2A4.2 4.2 0 0 0 12 12zm0 2.2c-4 0-7.2 2.1-7.2 4.6V21h14.4v-2.2c0-2.5-3.2-4.6-7.2-4.6z"/></svg>
+        </div><div class="tab-label">Profile</div>
+      </div>
+    </div>
+
+    <!-- API KEY MODAL -->
+    <div class="modal-overlay" id="api-modal" style="display:none">
+      <div class="modal-box">
+        <div class="modal-title">Google AI Studio API key</div>
+        <div class="modal-sub">Your key is stored only in your browser and only used to call the Google Gemini API directly. Get one at aistudio.google.com.</div>
+        <input class="modal-input" id="api-key-input" type="password" placeholder="AIza...">
+        <div id="api-test-status" style="font-size:12px;color:var(--color-text-secondary);margin:-2px 0 10px"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" style="flex:1" onclick="closeApiModal()">Cancel</button>
+          <button class="btn" style="flex:1" onclick="testApiKey()">Test key</button>
+          <button class="btn btn-primary" style="flex:1" onclick="saveApiKey()">Save key</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="auth-modal" style="display:none">
+      <div class="modal-box">
+        <div class="modal-title" id="auth-modal-title">Create account</div>
+        <div class="modal-sub" id="auth-modal-sub">Sign in to sync your Study Buddy progress across devices.</div>
+        <input class="modal-input" id="auth-email-input" type="email" placeholder="Email address">
+        <input class="modal-input" id="auth-password-input" type="password" placeholder="Password">
+        <div id="auth-modal-status" style="font-size:12px;color:var(--color-text-secondary);margin:-2px 0 10px"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" style="flex:1" onclick="closeAuthModal()">Cancel</button>
+          <button class="btn btn-primary" style="flex:1" onclick="submitAuth()" id="auth-submit-btn">Create account</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SESSION COMPLETE MODAL -->
+    <div class="modal-overlay" id="session-modal" style="display:none">
+      <div class="modal-box" style="text-align:center">
+        <div style="font-size:36px;margin-bottom:8px">+</div>
+        <div class="modal-title">Session complete!</div>
+        <div style="font-size:13px;color:var(--color-text-secondary);margin:6px 0 14px" id="session-complete-msg">Great work!</div>
+        <button class="btn btn-primary btn-full" onclick="closeSessionModal()">Collect XP</button>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/script.js"></script>
+</body>
+</html>
