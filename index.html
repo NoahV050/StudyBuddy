@@ -2,11 +2,12 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#534AB7">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
-  <link rel="apple-touch-icon" href="icons/icon-192.svg">
-  <meta name="theme-color" content="#534AB7">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Studiemaatje</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -17,98 +18,74 @@
       <span>Studiemaatje</span>
       <span>100%</span>
     </div>
-
     <div class="toast" id="toast"></div>
-
     <div class="screen" id="screen">
 
-      <!-- AUTH LANDING -->
       <div class="page active" id="pg-auth-landing" style="justify-content:center">
         <div class="landing-topbar">
           <div class="landing-badge">Studie flow</div>
           <div class="landing-theme-toggle">
-            <button class="btn btn-sm theme-btn" id="landing-theme-light-btn" onclick="setTheme('light')">Licht</button>
-            <button class="btn btn-sm theme-btn" id="landing-theme-dark-btn" onclick="setTheme('dark')">Donker</button>
+            <button class="btn btn-sm theme-btn" onclick="setTheme('light')">Licht</button>
+            <button class="btn btn-sm theme-btn" onclick="setTheme('dark')">Donker</button>
           </div>
         </div>
         <div class="onboard-hero">
           <div class="onboard-icon">SB</div>
           <div class="onboard-title">Studiemaatje</div>
-          <div class="onboard-sub">Log in op je account en ga verder met je studievoortgang op web of telefoon zonder je plek kwijt te raken.</div>
+          <div class="onboard-sub">Log in en ga verder waar je was gebleven.</div>
         </div>
-        <div style="padding:0 8px;display:flex;flex-direction:column;gap:10px">
-          <div class="card" style="text-align:left">
-            <div style="font-size:13px;font-weight:500;margin-bottom:4px">Ga verder waar je was gebleven</div>
-            <div style="font-size:12px;color:var(--color-text-secondary);line-height:1.6">Je taken, notities, focussessies en tutor-geschiedenis blijven gekoppeld aan je account.</div>
-          </div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-sm" style="flex:1" onclick="showAuthModal('signin')">Inloggen</button>
-            <button class="btn btn-sm btn-primary" style="flex:1" onclick="showAuthModal('signup')">Account maken</button>
-          </div>
-          <div style="text-align:center;font-size:12px;color:var(--color-text-secondary)" id="auth-landing-note">Na het inloggen vragen we een paar profielgegevens zoals je naam en leeftijd.</div>
+        <div style="padding:0 16px;display:flex;flex-direction:column;gap:12px">
+          <button class="btn btn-sm" onclick="showAuthModal('signin')">Inloggen</button>
+          <button class="btn btn-sm btn-primary" onclick="showAuthModal('signup')">Account maken</button>
         </div>
       </div>
 
-      <!-- PROFILE SETUP -->
       <div class="page" id="pg-profile-setup" style="justify-content:center">
         <div class="onboard-hero">
           <div class="onboard-icon">Me</div>
           <div class="onboard-title">Maak je profiel aan</div>
-          <div class="onboard-sub">Hou het simpel: net genoeg gegevens om je account persoonlijk te maken.</div>
         </div>
-        <div style="padding:0 8px;display:flex;flex-direction:column;gap:10px">
+        <div style="padding:0 16px;display:flex;flex-direction:column;gap:12px">
           <div>
             <div class="sec-hdr">Je naam</div>
-            <input id="ob-name" placeholder="bijv. Noah" style="width:100%;padding:10px 12px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:14px;font-family:inherit;outline:none">
+            <input id="ob-name" placeholder="bijv. Noah" style="width:100%;padding:12px;border-radius:10px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);font-size:15px">
           </div>
           <div>
             <div class="sec-hdr">Leeftijd</div>
-            <input id="ob-age" type="number" min="8" max="99" placeholder="bijv. 16" style="width:100%;padding:10px 12px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:14px;font-family:inherit;outline:none">
+            <input id="ob-age" type="number" placeholder="bijv. 16" style="width:100%;padding:12px;border-radius:10px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);font-size:15px">
           </div>
           <div>
             <div class="sec-hdr">Opleidingsniveau</div>
-            <select id="ob-level" style="width:100%;padding:10px 12px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:14px;font-family:inherit;outline:none">
-              <option value="Middelbare school">Middelbare school</option>
-              <option value="MBO">MBO</option>
-              <option value="HBO">HBO</option>
-              <option value="Universiteit">Universiteit</option>
-              <option value="Anders">Anders</option>
+            <select id="ob-level" style="width:100%;padding:12px;border-radius:10px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);font-size:15px">
+              <option>Middelbare school</option>
+              <option>MBO</option>
+              <option>HBO</option>
+              <option>Universiteit</option>
+              <option>Anders</option>
             </select>
           </div>
-          <div>
-            <div class="sec-hdr">Dagelijks studiedoel</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap" id="goal-btns">
-              <button class="btn btn-sm goal-btn" data-val="60" onclick="selectGoal(this)">1 uur</button>
-              <button class="btn btn-sm goal-btn active-goal" data-val="120" onclick="selectGoal(this)">2 uur</button>
-              <button class="btn btn-sm goal-btn" data-val="180" onclick="selectGoal(this)">3 uur</button>
-              <button class="btn btn-sm goal-btn" data-val="240" onclick="selectGoal(this)">4 uur</button>
-            </div>
-          </div>
-          <button class="btn btn-primary btn-full" style="margin-top:4px" onclick="finishOnboard()">Profiel opslaan</button>
+          <button class="btn btn-primary btn-full" onclick="finishOnboard()">Profiel opslaan</button>
         </div>
       </div>
 
-      <!-- HOME -->
       <div class="page" id="pg-home">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:12px">
           <div>
             <div class="page-title" id="greeting">Goedemorgen</div>
             <div class="page-sub" id="home-sub">Klaar om te leren?</div>
           </div>
-          <div class="streak-fire" id="streak-display">Reeks <span id="streak-num">0</span></div>
+          <div class="streak-fire">Reeks <span id="streak-num">0</span></div>
         </div>
-
-        <div class="card" style="margin-bottom:10px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="card" style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
             <span style="font-size:13px;font-weight:500">Doel van vandaag</span>
             <span style="font-size:12px;color:var(--color-text-secondary)" id="goal-progress-txt">0 / 2h</span>
           </div>
           <div class="progress-track"><div class="progress-fill" id="goal-bar" style="width:0%"></div></div>
-          <div style="margin-top:10px">
+          <div style="margin-top:12px">
             <button class="btn btn-primary btn-full" onclick="goTo('focus')">Start focussessie</button>
           </div>
         </div>
-
         <div class="metric-row">
           <div class="metric-box">
             <div class="metric-label">Totaal XP</div>
@@ -116,7 +93,7 @@
           </div>
           <div class="metric-box">
             <div class="metric-label">Niveau</div>
-            <div class="metric-val" id="level-display">Eerstejaars</div>
+            <div class="metric-val" id="level-display">-</div>
           </div>
         </div>
         <div class="metric-row">
@@ -129,78 +106,59 @@
             <div class="metric-val" id="tasks-done">0</div>
           </div>
         </div>
-
-        <div class="sec-hdr" style="margin-top:6px">Aankomende taken</div>
-        <div class="card" id="upcoming-tasks">
-          <div style="font-size:13px;color:var(--color-text-secondary)">Nog geen taken - voeg er een paar toe bij Taken</div>
-        </div>
-
-        <div style="margin-top:10px">
-          <button class="btn btn-full" onclick="goTo('ai')">Stel een vraag aan de AI-tutor</button>
-        </div>
+        <div class="sec-hdr">Aankomende taken</div>
+        <div id="upcoming-tasks" style="font-size:13px;color:var(--color-text-secondary)">Nog geen taken</div>
       </div>
 
-      <!-- FOCUS -->
       <div class="page" id="pg-focus" style="align-items:center">
         <div style="width:100%">
           <div class="page-title">Focustimer</div>
-          <div class="page-sub" id="focus-sub">Kies hieronder een sessietype</div>
         </div>
-        <div style="display:flex;gap:6px;margin-bottom:20px;width:100%">
+        <div style="display:flex;gap:8px;margin-bottom:20px;width:100%">
           <button class="btn btn-sm" id="mode-pomo" onclick="setMode('pomo')" style="flex:1">Pomodoro 25m</button>
           <button class="btn btn-sm" id="mode-short" onclick="setMode('short')" style="flex:1">Kort 10m</button>
           <button class="btn btn-sm" id="mode-long" onclick="setMode('long')" style="flex:1">Diep 50m</button>
         </div>
-
         <div class="timer-ring">
           <svg width="180" height="180" viewBox="0 0 180 180">
             <circle class="timer-ring-bg" cx="90" cy="90" r="82"/>
-            <circle class="timer-ring-fill" cx="90" cy="90" r="82" id="timer-arc"
-              stroke-dasharray="515" stroke-dashoffset="0"/>
+            <circle class="timer-ring-fill" cx="90" cy="90" r="82" id="timer-arc" stroke-dasharray="515" stroke-dashoffset="0"/>
           </svg>
           <div class="timer-center">
             <div class="timer-time" id="timer-display">25:00</div>
             <div class="timer-mode" id="timer-mode-lbl">Focus</div>
           </div>
         </div>
-
-        <div style="display:flex;gap:10px;width:100%;max-width:260px;margin-bottom:20px">
+        <div style="display:flex;gap:10px;width:100%;max-width:280px;margin-bottom:20px">
           <button class="btn" id="btn-start" onclick="toggleTimer()" style="flex:2">Start</button>
           <button class="btn" onclick="resetTimer()" style="flex:1">Opnieuw</button>
         </div>
-
         <div style="width:100%">
-          <div class="sec-hdr">Vak (optioneel)</div>
-          <select id="focus-subject" style="width:100%;padding:8px 10px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:13px;font-family:inherit">
+          <div class="sec-hdr">Vak</div>
+          <select id="focus-subject" style="width:100%;padding:10px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary)">
             <option>Wiskunde</option><option>Natuurkunde</option><option>Geschiedenis</option><option>Nederlands</option><option>Anders</option>
           </select>
         </div>
-
-        <div style="width:100%;margin-top:14px">
+        <div style="width:100%;margin-top:16px">
           <div class="sec-hdr">Sessies van vandaag</div>
           <div id="sessions-log" style="font-size:13px;color:var(--color-text-secondary)">Nog geen sessies</div>
         </div>
       </div>
 
-      <!-- AI TUTOR -->
-      <div class="page" id="pg-ai" style="padding:0;gap:0">
-        <div style="padding:14px 14px 8px;flex-shrink:0">
+      <div class="page" id="pg-ai" style="padding:0">
+        <div style="padding:14px 14px 8px">
           <div class="page-title">AI-tutor</div>
-          <div style="display:flex;gap:6px;align-items:center">
-            <select id="ai-subject" style="flex:1;padding:5px 8px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:12px;font-family:inherit">
-              <option>Wiskunde</option><option>Natuurkunde</option><option>Geschiedenis</option><option>Nederlands</option><option>Anders</option>
-            </select>
-            <button class="btn btn-sm" onclick="clearChat()">Wissen</button>
-          </div>
+          <select id="ai-subject" style="width:100%;padding:8px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);margin-bottom:10px">
+            <option>Wiskunde</option><option>Natuurkunde</option><option>Geschiedenis</option><option>Nederlands</option><option>Anders</option>
+          </select>
         </div>
         <div class="quick-chips">
-          <button class="chip" onclick="sendChip('Leg dit stap voor stap uit')">Leg stap voor stap uit</button>
-          <button class="chip" onclick="sendChip('Geef me een simpel voorbeeld')">Geef een voorbeeld</button>
+          <button class="chip" onclick="sendChip('Leg dit stap voor stap uit')">Stap voor stap</button>
+          <button class="chip" onclick="sendChip('Geef me een simpel voorbeeld')">Voorbeeld</button>
           <button class="chip" onclick="sendChip('Overhoor mij over dit onderwerp')">Overhoor mij</button>
-          <button class="chip" onclick="sendChip('Vat samen wat ik moet weten')">Samenvatten</button>
         </div>
         <div class="chat-area" id="chat-area">
-          <div class="bubble ai">Hoi! Ik ben je Studiemaatje. Stel gerust je vraag, dan help ik je stap voor stap verder in plaats van alleen het antwoord te geven.</div>
+          <div class="bubble ai">Hoi! Ik ben je Studiemaatje. Stel gerust je vraag!</div>
         </div>
         <div class="chat-input-row">
           <input id="chat-input" placeholder="Stel een vraag..." onkeydown="if(event.key==='Enter')sendMessage()">
@@ -210,11 +168,9 @@
         </div>
       </div>
 
-      <!-- TASKS -->
       <div class="page" id="pg-tasks">
         <div class="page-title">Taken</div>
-        <div class="page-sub">Houd je opdrachten en deadlines bij</div>
-        <div style="display:flex;gap:6px;margin-bottom:10px">
+        <div style="display:flex;gap:8px;margin-bottom:12px">
           <button class="btn btn-sm" id="filter-all" onclick="filterTasks('all')" style="font-weight:500">Alles</button>
           <button class="btn btn-sm" id="filter-todo" onclick="filterTasks('todo')">Te doen</button>
           <button class="btn btn-sm" id="filter-done" onclick="filterTasks('done')">Klaar</button>
@@ -223,147 +179,91 @@
           <div id="task-list"></div>
           <div class="add-task-row">
             <input id="new-task-input" placeholder="Voeg een taak toe..." onkeydown="if(event.key==='Enter')addTask()">
-            <button class="btn btn-sm" onclick="addTask()">Toevoegen</button>
+            <button class="btn btn-sm" onclick="addTask()">+</button>
           </div>
         </div>
       </div>
 
-      <!-- NOTES -->
       <div class="page" id="pg-notes">
         <div class="page-title">Notities</div>
-        <div class="page-sub">Snel iets opslaan en laten uitleggen door AI</div>
-        <div id="notes-list-view">
-          <button class="btn btn-primary btn-full" style="margin-bottom:10px" onclick="openNoteEditor(-1)">+ Nieuwe notitie</button>
-          <div id="notes-list"></div>
-        </div>
-        <div id="notes-editor-view" style="display:none;flex:1;flex-direction:column;gap:8px">
-          <div style="display:flex;gap:8px;align-items:center">
-            <button class="btn btn-sm" onclick="closeNoteEditor()">Terug</button>
-            <input id="note-title-input" placeholder="Titel" style="flex:1;padding:6px 10px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:14px;font-family:inherit;outline:none">
-            <button class="btn btn-sm" onclick="saveNote()">Opslaan</button>
-          </div>
-          <textarea id="note-body-input" placeholder="Schrijf hier je notities..." style="flex:1;font-family:inherit;font-size:13px;padding:10px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);resize:none;outline:none;min-height:200px"></textarea>
-          <button class="btn btn-full" onclick="explainNote()">Laat AI deze notities uitleggen</button>
-        </div>
+        <button class="btn btn-primary btn-full" onclick="openNoteEditor(-1)" style="margin-bottom:12px">+ Nieuwe notitie</button>
+        <div id="notes-list"></div>
       </div>
 
-      <!-- PROFILE -->
       <div class="page" id="pg-profile">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-          <div style="width:48px;height:48px;border-radius:50%;background:#EEEDFE;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:500;color:#3C3489" id="avatar-initials">A</div>
+          <div style="width:48px;height:48px;border-radius:50%;background:var(--purple-light);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;color:var(--purple)" id="avatar-initials">A</div>
           <div>
-            <div style="font-size:16px;font-weight:500" id="profile-name">Student</div>
-            <div style="font-size:12px;color:var(--color-text-secondary)" id="profile-level-lbl">Niveau 1 - 0 XP</div>
-            <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px" id="profile-meta-lbl">Leeftijd -, Opleidingsniveau -</div>
+            <div style="font-size:16px;font-weight:600" id="profile-name">Student</div>
+            <div style="font-size:12px;color:var(--color-text-secondary)" id="profile-level-lbl">-</div>
+            <div style="font-size:12px;color:var(--color-text-secondary)" id="profile-meta-lbl">Leeftijd -</div>
           </div>
         </div>
-        <button class="btn btn-full btn-sm" style="margin-bottom:10px" onclick="editProfile()">Profiel bewerken</button>
-        <div class="card" style="margin-bottom:10px">
-          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-            <span style="font-size:13px;font-weight:500">XP tot het volgende niveau</span>
+        <button class="btn btn-full" onclick="editProfile()" style="margin-bottom:12px">Profiel bewerken</button>
+        <div class="card" style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between">
+            <span style="font-size:13px;font-weight:500">XP naar volgende niveau</span>
             <span style="font-size:12px;color:var(--color-text-secondary)" id="xp-next-lbl">0 / 200</span>
           </div>
           <div class="xp-bar-track"><div class="xp-bar-fill" id="xp-bar" style="width:0%"></div></div>
         </div>
-
-        <div class="sec-hdr">Focus deze week (uren per dag)</div>
-        <div class="card" style="margin-bottom:10px">
+        <div class="sec-hdr">Deze week</div>
+        <div class="card" style="margin-bottom:12px">
           <div id="bar-chart-wrap"></div>
         </div>
-
         <div class="sec-hdr">Badges</div>
         <div class="badge-grid" id="badge-grid"></div>
-
-        <div style="margin-top:14px">
-          <div class="sec-hdr">Account</div>
-          <div class="card" style="margin-bottom:10px">
-            <div style="font-size:13px;margin-bottom:6px">Syncstatus <span class="pill pill-amber" id="auth-status-pill">Gast</span></div>
-            <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px" id="auth-status-text">Je gegevens staan nu alleen op dit apparaat.</div>
-            <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:10px;display:none" id="signed-in-email"></div>
-            <div style="display:flex;gap:8px">
-              <button class="btn btn-sm" style="flex:1" onclick="showAuthModal('signin')" id="signin-btn">Inloggen</button>
-              <button class="btn btn-sm btn-primary" style="flex:1" onclick="showAuthModal('signup')" id="signup-btn">Account maken</button>
-            </div>
-            <button class="btn btn-full btn-sm" style="margin-top:8px;display:none" onclick="logoutUser()" id="logout-btn">Uitloggen</button>
-          </div>
-          <div class="sec-hdr">Instellingen</div>
-          <div class="card">
-            <div style="font-size:13px;margin-bottom:8px">Thema</div>
-            <div style="display:flex;gap:8px;margin-bottom:10px">
-              <button class="btn btn-sm theme-btn" id="theme-light-btn" onclick="setTheme('light')" style="flex:1">Licht</button>
-              <button class="btn btn-sm theme-btn" id="theme-dark-btn" onclick="setTheme('dark')" style="flex:1">Donker</button>
-            </div>
-            <div style="font-size:13px;margin-bottom:8px">AI-verbinding <span class="pill pill-teal" id="api-key-status">Via server</span></div>
-            <button class="btn btn-full btn-sm" onclick="showApiModal()">Bekijk AI-informatie</button>
-          </div>
+        <div class="sec-hdr" style="margin-top:16px">Thema</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm theme-btn" onclick="setTheme('light')">Licht</button>
+          <button class="btn btn-sm theme-btn" onclick="setTheme('dark')">Donker</button>
         </div>
+        <div class="sec-hdr" style="margin-top:12px">API-sleutel</div>
+        <button class="btn btn-full btn-sm" onclick="showApiModal()">Google AI Studio API instellen</button>
       </div>
 
     </div>
 
     <div class="tab-bar" id="tab-bar" style="display:none">
       <div class="tab-item active" id="tab-home" onclick="goTo('home')">
-        <div class="tab-icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.8 12 3l9 7.8v9.7a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1z"/></svg>
-        </div><div class="tab-label">Start</div>
+        <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M3 10.8 12 3l9 7.8v9.7a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1z"/></svg></div>
+        <div class="tab-label">Start</div>
       </div>
       <div class="tab-item" id="tab-focus" onclick="goTo('focus')">
-        <div class="tab-icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9h-3.2a5.8 5.8 0 1 1-1.7-4.1L18 6A8.9 8.9 0 0 0 12 3zm7.7 0L14 8.7V10h1.3L21 4.3z"/></svg>
-        </div><div class="tab-label">Focus</div>
+        <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-3.2a5.8 5.8 0 1 1-1.7-4.1L18 6A8.9 8.9 0 0 0 12 3zm7.7 0L14 8.7V10h1.3L21 4.3z"/></svg></div>
+        <div class="tab-label">Focus</div>
       </div>
       <div class="tab-item" id="tab-ai" onclick="goTo('ai')">
-        <div class="tab-icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 14 7l4.9.5-3.7 3.2 1.1 4.8L12 13.1 7.7 15.5l1.1-4.8L5.1 7.5 10 7zM5 14.5l1.2 2.6L9 18.3l-2.1 1.8.6 2.7L5 21.4l-2.5 1.4.6-2.7L1 18.3l2.8-.2zm14 0 1.2 2.6 2.8.2-2.1 1.8.6 2.7-2.5-1.4-2.5 1.4.6-2.7-2.1-1.8 2.8-.2z"/></svg>
-        </div><div class="tab-label">Tutor</div>
+        <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M12 2.5 14 7l4.9.5-3.7 3.2 1.1 4.8L12 13.1 7.7 15.5l1.1-4.8L5.1 7.5 10 7z"/></svg></div>
+        <div class="tab-label">Tutor</div>
       </div>
       <div class="tab-item" id="tab-tasks" onclick="goTo('tasks')">
-        <div class="tab-icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.2 17.6 4.8 13.2l1.7-1.7 2.7 2.7 8.3-8.3 1.7 1.7zM4 5h11v2H4zm0 12h7v2H4z"/></svg>
-        </div><div class="tab-label">Taken</div>
+        <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M9.2 17.6 4.8 13.2l1.7-1.7 2.7 2.7 8.3-8.3 1.7 1.7zM4 5h11v2H4zm0 12h7v2H4z"/></svg></div>
+        <div class="tab-label">Taken</div>
       </div>
       <div class="tab-item" id="tab-notes" onclick="goTo('notes')">
-        <div class="tab-icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h9.5L20 8v12a.5.5 0 0 1-.5.5h-13A.5.5 0 0 1 6 20zM14.5 4.9V9H18zM8 12h8v1.8H8zm0 3.5h8v1.8H8z"/></svg>
-        </div><div class="tab-label">Notities</div>
+        <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M6 3.5h9.5L20 8v12a.5.5 0 0 1-.5.5h-13A.5.5 0 0 1 6 20zM14.5 4.9V9H18z"/></svg></div>
+        <div class="tab-label">Notities</div>
       </div>
       <div class="tab-item" id="tab-profile" onclick="goTo('profile')">
-        <div class="tab-icon">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4.2 4.2 0 1 0-4.2-4.2A4.2 4.2 0 0 0 12 12zm0 2.2c-4 0-7.2 2.1-7.2 4.6V21h14.4v-2.2c0-2.5-3.2-4.6-7.2-4.6z"/></svg>
-        </div><div class="tab-label">Profiel</div>
+        <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M12 12a4.2 4.2 0 1 0-4.2-4.2A4.2 4.2 0 0 0 12 12zm0 2.2c-4 0-7.2 2.1-7.2 4.6V21h14.4v-2.2c0-2.5-3.2-4.6-7.2-4.6z"/></svg></div>
+        <div class="tab-label">Profiel</div>
       </div>
     </div>
 
-    <!-- API KEY MODAL -->
     <div class="modal-overlay" id="api-modal" style="display:none">
       <div class="modal-box">
-        <div class="modal-title">AI via server</div>
-        <div class="modal-sub">Deze app gebruikt nu een server-side AI-koppeling. De echte Gemini API-sleutel hoort alleen op de server te staan en niet meer in de browser.</div>
-        <input class="modal-input" id="api-key-input" type="password" placeholder="Server-side sleutel" disabled>
-        <div id="api-test-status" style="font-size:12px;color:var(--color-text-secondary);margin:-2px 0 10px"></div>
+        <div class="modal-title">Google AI Studio API-sleutel</div>
+        <div class="modal-sub">Haal je sleutel via aistudio.google.com</div>
+        <input class="modal-input" id="api-key-input" type="password" placeholder="AIza...">
+        <div id="api-test-status" style="font-size:12px;margin-bottom:10px"></div>
         <div style="display:flex;gap:8px">
-          <button class="btn" style="flex:1" onclick="closeApiModal()">Sluiten</button>
-          <button class="btn" style="flex:1" onclick="testApiKey()">Server testen</button>
-          <button class="btn btn-primary" style="flex:1" onclick="closeApiModal()">Begrepen</button>
+          <button class="btn" onclick="closeApiModal()">Annuleren</button>
+          <button class="btn btn-primary" onclick="saveApiKey()">Opslaan</button>
         </div>
       </div>
     </div>
 
-    <div class="modal-overlay" id="auth-modal" style="display:none">
-      <div class="modal-box">
-        <div class="modal-title" id="auth-modal-title">Account maken</div>
-        <div class="modal-sub" id="auth-modal-sub">Log in om je Studiemaatje voortgang tussen apparaten te synchroniseren.</div>
-        <input class="modal-input" id="auth-email-input" type="email" placeholder="E-mailadres">
-        <input class="modal-input" id="auth-password-input" type="password" placeholder="Wachtwoord">
-        <div id="auth-modal-status" style="font-size:12px;color:var(--color-text-secondary);margin:-2px 0 10px"></div>
-        <div style="display:flex;gap:8px">
-          <button class="btn" style="flex:1" onclick="closeAuthModal()">Annuleren</button>
-          <button class="btn btn-primary" style="flex:1" onclick="submitAuth()" id="auth-submit-btn">Account maken</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- SESSION COMPLETE MODAL -->
     <div class="modal-overlay" id="session-modal" style="display:none">
       <div class="modal-box" style="text-align:center">
         <div style="font-size:36px;margin-bottom:8px">+</div>
@@ -377,10 +277,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
   <script src="js/script.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
-    }
-  </script>
+  <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');</script>
 </body>
 </html>
