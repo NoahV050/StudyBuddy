@@ -324,4 +324,5 @@ export function renderProfile(state, sync) {
   renderSessionLog(state);
   renderThemeButtons(state);
   renderAuth(sync);
+  byId('delete-account-btn').hidden = !sync.user;
 }

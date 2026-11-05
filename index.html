@@ -364,6 +364,10 @@
         <div class="pill" id="auth-status-pill" style="margin-bottom:4px">Uitgelogd</div>
         <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:12px" id="auth-status-text">Log in of maak een account.</div>
         <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:12px" id="signed-in-email"></div>
+        <div class="sec-hdr" style="margin-top:12px">Privacy en gegevens</div>
+        <p class="challenge-intro">Download een kopie van je gegevens of verwijder je account en cloudprofiel.</p>
+        <button class="btn btn-full" type="button" data-action="export-data" style="margin-bottom:8px">Download mijn gegevens</button>
+        <button class="btn btn-full" type="button" data-action="delete-account" id="delete-account-btn" hidden style="margin-bottom:12px">Verwijder mijn account</button>
         <button class="btn btn-full" data-action="logout" id="logout-btn" style="display:none">Uitloggen</button>
       </div>
 
@@ -428,6 +432,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
-  <script type="module" src="js/script.js?version=14"></script>
+  <script type="module" src="js/script.js?version=16"></script>
 </body>
 </html>

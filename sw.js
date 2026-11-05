@@ -1,4 +1,4 @@
-const CACHE_NAME = 'studiemaatje-v15';
+const CACHE_NAME = 'studiemaatje-v17';
 const CACHE_PREFIX = 'studiemaatje-';
 const APP_SHELL = [
   '/',
@@ -7,7 +7,7 @@ const APP_SHELL = [
   '/css/styles.css',
   '/icons/icon-192.svg',
   '/icons/icon-512.svg',
-  '/js/script.js?version=14',
+  '/js/script.js?version=16',
   '/js/config.js',
   '/js/modules/state.js',
   '/js/modules/storage.js',
@@ -48,6 +48,8 @@ self.addEventListener('fetch', event => {
 
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
+      const cached = await caches.match(request) || await caches.match('/index.html');
+      if (cached) return cached;
       try {
         const response = await fetch(request);
         if (response.ok) {

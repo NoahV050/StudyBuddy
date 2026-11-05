@@ -32,6 +32,16 @@ let auth, editingNoteId = null, chatAbortController = null;
 let learningSubjectId = state.subjects?.find(subject => !subject.deleted)?.id || '';
 let flashcardRevealed = false;
 const $ = byId;
+// Keep deletion working while an older service-worker cache still serves the storage module.
+function deleteLocalState(user) {
+  try {
+    localStorage.removeItem(user?.id ? `sb_state_user_${user.id}` : 'sb_state_guest');
+    return true;
+  } catch (error) {
+    console.error('Studiemaatje kon lokale accountgegevens niet verwijderen.', error);
+    return false;
+  }
+}
 const save = () => { rolloverDailyState(state); touch(state); saveState(sync.user, state); auth?.scheduleSave(); };
 function toast(message) { const element = $('toast'); element.textContent = message; element.classList.add('show'); setTimeout(() => element.classList.remove('show'), 2200); }
 function setTheme(theme) { state.theme = ['light', 'dark', 'auto'].includes(theme) ? theme : 'auto'; document.documentElement.dataset.theme = state.theme; save(); renderThemeButtons(); }
@@ -296,6 +306,34 @@ let authMode = 'signin'; function showAuthModal(mode) { authMode = mode; $('auth
 function closeAuthModal() { $('auth-modal').style.display = 'none'; $('auth-modal-status').textContent = ''; }
 async function submitAuth() { const email = $('auth-email-input').value.trim(); const password = $('auth-password-input').value; if (!email || password.length < 6) return $('auth-modal-status').textContent = 'Vul een e-mailadres en een wachtwoord van minimaal 6 tekens in.'; try { const signedIn = authMode === 'signin' ? (await auth.signIn(email, password), true) : await auth.signUp(email, password); if (signedIn) closeAuthModal(); else $('auth-modal-status').textContent = 'Controleer je e-mail om je account te bevestigen.'; } catch (error) { $('auth-modal-status').textContent = error.message || 'Inloggen is mislukt.'; } }
 async function logoutUser() { try { await auth.signOut(); toast('Uitgelogd'); } catch { toast('Uitloggen is niet gelukt.'); } }
+function exportData() {
+  const exportedState = JSON.parse(JSON.stringify(state));
+  delete exportedState.apiKey;
+  delete exportedState.timerInterval;
+  const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), state: exportedState }, null, 2)], {
+    type: 'application/json'
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `studiemaatje-gegevens-${localDateKey()}.json`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('Je gegevens zijn gedownload.');
+}
+async function deleteAccount() {
+  if (!auth?.user) return toast('Log eerst in om je account te verwijderen.');
+  if (navigator.onLine === false) return toast('Je account kan alleen online worden verwijderd.');
+  const confirmed = window.confirm('Weet je zeker dat je je Studiemaatje-account wilt verwijderen? Je cloudprofiel en lokale voortgang op dit apparaat worden definitief gewist.');
+  if (!confirmed) return;
+  try {
+    await auth.deleteAccount();
+    showPage('auth-landing', false);
+    toast('Je account is verwijderd.');
+  } catch (error) {
+    toast(error.message || 'Je account kon niet worden verwijderd.');
+  }
+}
 function closeSessionModal() { $('session-modal').style.display = 'none'; }
 Object.assign(window, { completePlannedItem, claimChallenge: claimLearningChallenge });
 const clickActions = {
@@ -327,6 +365,8 @@ const clickActions = {
   'edit-profile': editProfile,
   'use-streak-freeze': useStreakFreezeFromProfile,
   logout: logoutUser,
+  'export-data': exportData,
+  'delete-account': deleteAccount,
   'close-session-modal': closeSessionModal,
   'close-auth-modal': closeAuthModal,
   'submit-auth': submitAuth
@@ -352,7 +392,7 @@ document.addEventListener('keydown', event => {
   event.preventDefault();
   clickActions[action](event.target);
 });
-auth = createAuthService({ config: window.STUDY_BUDDY_CONFIG, getState: () => state, loadLocal: loadState, saveLocal: saveState, guestState: () => loadState(null) || createDefaultState(), onState: update => { if (update.state) state = normalizeState(update.state); sync = { ...sync, ...update }; renderAll(); } });
+auth = createAuthService({ config: window.STUDY_BUDDY_CONFIG, getState: () => state, loadLocal: loadState, saveLocal: saveState, deleteLocal: deleteLocalState, guestState: () => loadState(null) || createDefaultState(), onState: update => { if (update.state) state = normalizeState(update.state); sync = { ...sync, ...update }; renderAll(); } });
 setInterval(tickTimer, 1000); document.addEventListener('visibilitychange', () => { if (!document.hidden) tickTimer(); }); window.addEventListener('beforeunload', () => saveState(sync.user, state));
 window.addEventListener('offline', () => {
   sync = { ...sync, mode: 'offline', message: 'Offline: wijzigingen staan op dit apparaat en worden later gesynchroniseerd.' };

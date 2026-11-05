@@ -68,3 +68,64 @@ test('retries a concurrent profile update and merges both devices', async () => 
   assert.equal(row.state.xp, 30);
   assert.deepEqual(row.state.xpEvents.map(event => event.id).sort(), ['task:local', 'task:remote']);
 });
+
+test('deletes the current account, removes local state, and clears its session', async () => {
+  const previousWindow = globalThis.window;
+  const previousFetch = globalThis.fetch;
+  const user = { id: 'student-delete' };
+  let state = createDefaultState();
+  let authListener;
+  let localDeleted = false;
+  let signedOutLocally = false;
+  const client = {
+    auth: {
+      onAuthStateChange(listener) { authListener = listener; },
+      async getSession() {
+        return { data: { session: { user, access_token: 'session-token' } }, error: null };
+      },
+      async signOut(options) {
+        signedOutLocally = options.scope === 'local';
+        authListener('SIGNED_OUT', null);
+        return { error: null };
+      }
+    },
+    from() {
+      return {
+        select() {
+          return { eq() { return { async maybeSingle() { return { data: null, error: null }; } }; } };
+        },
+        async insert() { return { error: null }; }
+      };
+    }
+  };
+  globalThis.window = { supabase: { createClient: () => client } };
+  globalThis.fetch = async (url, options) => {
+    assert.equal(url, '/api/delete-account');
+    assert.equal(options.headers.Authorization, 'Bearer session-token');
+    return new Response(JSON.stringify({ ok: true }), { status: 200 });
+  };
+
+  try {
+    const service = createAuthService({
+      config: { url: 'https://example.test', anonKey: 'public-key' },
+      onState(update) { if (update.state) state = normalizeState(update.state); },
+      getState: () => state,
+      loadLocal: () => null,
+      saveLocal() {},
+      deleteLocal(targetUser) { localDeleted = targetUser.id === user.id; return true; },
+      guestState: createDefaultState
+    });
+
+    await service.init();
+    assert.equal(service.user.id, user.id);
+    await service.deleteAccount();
+
+    assert.equal(localDeleted, true);
+    assert.equal(signedOutLocally, true);
+    assert.equal(service.user, null);
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+  }
+});

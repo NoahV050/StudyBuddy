@@ -83,13 +83,14 @@ export function mergeState(localState, remoteState) {
   return merged;
 }
 
-export function createAuthService({ config, onState, getState, loadLocal, saveLocal, guestState }) {
+export function createAuthService({ config, onState, getState, loadLocal, saveLocal, deleteLocal = () => true, guestState }) {
   let client = null;
   let user = null;
   let saveTimer = null;
   let hydrating = false;
   let authRevision = 0;
   let saveQueue = Promise.resolve();
+  let deleting = false;
 
   const configured = () => Boolean(config?.url && config?.anonKey && window.supabase?.createClient);
   const status = (mode, message) => onState({ mode, message, user });
@@ -141,7 +142,7 @@ export function createAuthService({ config, onState, getState, loadLocal, saveLo
   }
 
   function saveRemote() {
-    if (!client || !user || hydrating) return Promise.resolve();
+    if (!client || !user || hydrating || deleting) return Promise.resolve();
     if (navigator.onLine === false) {
       status('offline', 'Offline: wijzigingen staan op dit apparaat en worden later gesynchroniseerd.');
       return Promise.resolve();
@@ -158,7 +159,7 @@ export function createAuthService({ config, onState, getState, loadLocal, saveLo
   }
 
   function scheduleSave() {
-    if (!client || !user || hydrating) return;
+    if (!client || !user || hydrating || deleting) return;
     clearTimeout(saveTimer);
     if (navigator.onLine === false) {
       status('offline', 'Offline: wijzigingen staan op dit apparaat en worden later gesynchroniseerd.');
@@ -244,5 +245,59 @@ export function createAuthService({ config, onState, getState, loadLocal, saveLo
     }
   }
 
-  return { init, signIn, signUp, signOut, scheduleSave, configured, get user() { return user; } };
+  async function deleteAccount() {
+    if (!client || !user) throw new Error('Log eerst in om je account te verwijderen.');
+    if (navigator.onLine === false) throw new Error('Je account kan alleen online worden verwijderd.');
+    const targetUser = user;
+    const { data, error: sessionError } = await client.auth.getSession();
+    if (sessionError) throw sessionError;
+    const token = data.session?.access_token;
+    if (!token) throw new Error('Je sessie is verlopen. Log opnieuw in en probeer het nog eens.');
+
+    deleting = true;
+    clearTimeout(saveTimer);
+    try {
+      await saveQueue;
+    } catch (error) {
+      console.error('Een eerdere synchronisatie mislukte voordat het account werd verwijderd.', error);
+    }
+
+    let response;
+    try {
+      response = await fetch('/api/delete-account', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } catch {
+      deleting = false;
+      throw new Error('Verbinding met de accountservice is mislukt. Je account is niet verwijderd.');
+    }
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      deleting = false;
+      throw new Error(result.error || 'Je account kon niet worden verwijderd.');
+    }
+
+    const localDataRemoved = deleteLocal(targetUser);
+    let signOutError;
+    try {
+      ({ error: signOutError } = await client.auth.signOut({ scope: 'local' }));
+    } catch (error) {
+      signOutError = error;
+    }
+    authRevision += 1;
+    hydrating = false;
+    deleting = false;
+    user = null;
+    onState({ state: guestState() });
+    status('guest', 'Je account is verwijderd. Je gegevens staan alleen op dit apparaat.');
+    if (!localDataRemoved) {
+      throw new Error('Je account is verwijderd, maar lokale gegevens konden niet worden gewist. Wis de sitegegevens van dit apparaat.');
+    }
+    if (signOutError) {
+      throw new Error('Je account is verwijderd. Vernieuw de pagina om de sessie af te sluiten.');
+    }
+  }
+
+  return { init, signIn, signUp, signOut, deleteAccount, scheduleSave, configured, get user() { return user; } };
 }
