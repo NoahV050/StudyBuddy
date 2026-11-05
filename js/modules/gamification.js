@@ -1,4 +1,4 @@
-import { getLevel, touch } from './state.js';
+import { createId, getLevel, touch } from './state.js';
 
 const LEVELS = ['Beginner', 'Gevorderd', 'Ervaren', 'Expert', 'Gespecialiseerd', 'Meester'];
 const THRESHOLDS = [0, 200, 500, 1000, 2000, 3500];
@@ -8,6 +8,14 @@ export const badges = [
   ['xp500', '500 XP', '✧', state => state.xp >= 500], ['streak7', 'Week reeks', '7', state => state.streak >= 7],
   ['notes3', '3 notities', 'N', state => state.notes.filter(note => !note.deleted).length >= 3], ['ask_ai', 'AI-student', 'AI', state => state.chatHistory.length > 0]
 ];
-export function awardXp(state, amount) { state.xp += Math.max(0, amount); state.level = getLevel(state.xp); touch(state); }
+export function awardXp(state, amount, eventId = createId('xp')) {
+  const points = Math.max(0, Number(amount) || 0);
+  if (!points || state.xpEvents.some(event => event.id === eventId)) return false;
+  state.xpEvents.push({ id: eventId, amount: points, updated_at: new Date().toISOString() });
+  state.xp = state.xpBase + state.xpEvents.reduce((total, event) => total + event.amount, 0);
+  state.level = getLevel(state.xp);
+  touch(state);
+  return true;
+}
 export function levelName(xp) { return LEVELS[getLevel(xp)] || 'Meester'; }
 export function xpToNext(xp) { const level = getLevel(xp); return level >= THRESHOLDS.length - 1 ? { cur: xp, needed: xp } : { cur: xp - THRESHOLDS[level], needed: THRESHOLDS[level + 1] - THRESHOLDS[level] }; }

@@ -2,62 +2,53 @@ import { createDefaultState, localDateKey, normalizeState, rolloverDailyState, t
 import { loadState, saveState } from './modules/storage.js';
 import { addTask as createTask, deleteTask as removeTask, toggleTask as changeTask } from './modules/tasks.js';
 import { saveNote as persistNote } from './modules/notes.js';
-import { awardXp, badges, xpToNext } from './modules/gamification.js';
-import { MODES, completeTimer, pauseTimer, reconcileTimer, resetTimer as resetTimerState, setMode as setTimerMode, startTimer } from './modules/timer.js';
+import { awardXp } from './modules/gamification.js';
+import { completeTimer, pauseTimer, reconcileTimer, resetTimer as resetTimerState, setMode as setTimerMode, startTimer } from './modules/timer.js';
 import { addChatMessage, askTutor } from './modules/tutor.js';
 import { createAuthService } from './modules/auth.js';
-import { byId, renderEmptyState } from './modules/ui.js';
+import {
+  addBubble,
+  byId,
+  renderAuth as renderAuthView,
+  renderChat as renderChatView,
+  renderHome as renderHomeView,
+  renderNotes as renderNotesView,
+  renderProfile as renderProfileView,
+  renderTasks as renderTasksView,
+  renderThemeButtons as renderThemeButtonsView,
+  renderTimer as renderTimerView
+} from './modules/ui.js';
 
 let state = loadState(null) || createDefaultState();
 let sync = { mode: 'guest', message: 'Je gegevens staan alleen op dit apparaat.', user: null };
 let auth, editingNoteId = null, chatAbortController = null;
 const $ = byId;
-const formatTime = seconds => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
 const save = () => { rolloverDailyState(state); touch(state); saveState(sync.user, state); auth?.scheduleSave(); };
 function toast(message) { const element = $('toast'); element.textContent = message; element.classList.add('show'); setTimeout(() => element.classList.remove('show'), 2200); }
 function setTheme(theme) { state.theme = theme === 'dark' ? 'dark' : 'light'; document.documentElement.dataset.theme = state.theme; save(); renderThemeButtons(); }
-function renderThemeButtons() { ['light', 'dark'].forEach(theme => $(`theme-${theme}-btn`)?.classList.toggle('active-theme', state.theme === theme)); }
-function renderTimer() {
-  $('timer-display').textContent = formatTime(state.timerSeconds); $('timer-mode-lbl').textContent = MODES[state.timerMode].label; $('timer-arc').style.strokeDashoffset = 515 * (1 - state.timerSeconds / state.timerTotal); $('btn-start').textContent = state.timerRunning ? 'Pauzeer' : state.timerSeconds === state.timerTotal ? 'Start' : 'Hervat';
-  Object.keys(MODES).forEach(mode => { const button = $(`mode-${mode}`); if (button) { button.style.background = mode === state.timerMode ? '#534AB7' : ''; button.style.color = mode === state.timerMode ? '#fff' : ''; } });
-}
-function renderTasks() {
-  const list = $('task-list'); const tasks = state.tasks.filter(task => !task.deleted && (state.taskFilter === 'all' || (state.taskFilter === 'done' ? task.done : !task.done))); if (!tasks.length) return renderEmptyState(list, 'Geen taken hier'); list.replaceChildren();
-  tasks.forEach(task => { const row = document.createElement('div'); row.className = 'task-item'; const toggle = document.createElement('button'); toggle.className = `task-check${task.done ? ' done' : ''}`; toggle.type = 'button'; toggle.ariaLabel = task.done ? 'Markeer als niet afgerond' : 'Markeer als afgerond'; toggle.addEventListener('click', () => toggleTask(task.id)); const title = document.createElement('div'); title.className = `task-text${task.done ? ' done' : ''}`; title.textContent = task.title; const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'icon-button'; remove.textContent = '×'; remove.ariaLabel = `Verwijder ${task.title}`; remove.addEventListener('click', () => deleteTask(task.id)); row.append(toggle, title, remove); list.append(row); });
-}
-function renderNotes() {
-  const list = $('notes-list'); const notes = state.notes.filter(note => !note.deleted); if (!notes.length) return renderEmptyState(list, 'Nog geen notities. Tik op “Nieuwe notitie” om te beginnen.'); list.replaceChildren();
-  notes.forEach(note => { const card = document.createElement('button'); card.type = 'button'; card.className = 'note-card'; const title = document.createElement('div'); title.className = 'note-title'; title.textContent = note.title; const preview = document.createElement('div'); preview.className = 'note-preview'; preview.textContent = note.body || 'Lege notitie'; card.append(title, preview); card.addEventListener('click', () => openNoteEditor(note.id)); list.append(card); });
-}
-function addBubble(role, text) { const bubble = document.createElement('div'); bubble.className = `bubble ${role}`; bubble.textContent = String(text || ''); $('chat-area').append(bubble); $('chat-area').scrollTop = $('chat-area').scrollHeight; return bubble; }
-function renderChat() { const area = $('chat-area'); area.replaceChildren(); if (!state.chatHistory.length) return addBubble('ai', 'Hoi! Ik ben je Studiemaatje tutor. Stel gerust een vraag; ik help je stap voor stap.'); state.chatHistory.forEach(item => addBubble(item.role === 'assistant' ? 'ai' : 'user', item.content)); }
-function renderSessionLog() { const element = $('sessions-log'); element.replaceChildren(); if (!state.sessionLog?.length) { element.textContent = 'Nog geen sessies'; return; } state.sessionLog.forEach(session => { const item = document.createElement('div'); item.textContent = session.label; element.append(item); }); }
-function renderHome() {
-  rolloverDailyState(state); const hour = new Date().getHours(); $('greeting').textContent = `${hour < 12 ? 'Goedemorgen' : hour < 17 ? 'Goedemiddag' : 'Goedenavond'}, ${(state.name || 'Student').split(' ')[0]}`; $('home-sub').textContent = state.streak ? `Dag ${state.streak} reeks — ga zo door!` : 'Start vandaag je eerste sessie!'; $('streak-num').textContent = state.streak; $('xp-display').textContent = state.xp; $('level-display').textContent = state.studyLevel; $('sessions-today').textContent = state.sessionsToday; $('tasks-done').textContent = state.tasks.filter(task => task.done && !task.deleted).length;
-  const pct = Math.min(100, Math.round(state.studiedMin / state.dailyGoalMin * 100)); $('goal-bar').style.width = `${pct}%`; $('goal-progress-txt').textContent = `${Math.floor(state.studiedMin / 60) ? `${Math.floor(state.studiedMin / 60)}h ` : ''}${state.studiedMin % 60}m / ${Math.floor(state.dailyGoalMin / 60)}h`;
-  const target = $('upcoming-tasks'); target.replaceChildren(); const upcoming = state.tasks.filter(task => !task.deleted && !task.done).slice(0, 3); if (!upcoming.length) { target.textContent = 'Nog geen taken'; return; } upcoming.forEach(task => { const row = document.createElement('div'); row.className = 'task-item'; row.textContent = task.title; target.append(row); });
-}
-function renderProfile() {
-  $('profile-name').textContent = state.name; $('avatar-initials').textContent = (state.name || 'S')[0].toUpperCase(); $('profile-level-lbl').textContent = `${state.studyLevel} · ${state.xp} XP`; $('profile-meta-lbl').textContent = `Leeftijd ${state.age || '—'}, ${state.studyLevel}`; const next = xpToNext(state.xp); $('xp-next-lbl').textContent = `${next.cur} / ${next.needed}`; $('xp-bar').style.width = `${Math.min(100, Math.round(next.cur / Math.max(1, next.needed) * 100))}%`;
-  const chart = $('bar-chart-wrap'); chart.replaceChildren(); const days = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za']; const highest = Math.max(1, ...state.weekData); const wrap = document.createElement('div'); wrap.className = 'bar-chart'; state.weekData.forEach((minutes, index) => { const group = document.createElement('div'); group.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center'; const bar = document.createElement('div'); bar.className = `bar${index === new Date().getDay() ? ' today' : ''}`; bar.style.height = `${Math.max(4, Math.round(minutes / highest * 52))}px`; bar.style.width = '100%'; const label = document.createElement('div'); label.className = 'bar-label'; label.textContent = days[index]; group.append(bar, label); wrap.append(group); }); chart.append(wrap);
-  const grid = $('badge-grid'); grid.replaceChildren(); badges.forEach(([, name, icon, condition]) => { const item = document.createElement('div'); item.className = `badge-item${condition(state) ? ' earned' : ''}`; item.textContent = `${icon} ${name}`; grid.append(item); }); renderSessionLog(); renderThemeButtons(); renderAuth();
-}
-function renderAuth() { const loggedIn = Boolean(sync.user); $('auth-status-pill').textContent = sync.mode === 'error' ? 'Sync fout' : loggedIn ? 'Verbonden' : 'Uitgelogd'; $('auth-status-pill').className = `pill ${sync.mode === 'error' ? 'pill-coral' : loggedIn ? 'pill-teal' : 'pill-amber'}`; $('auth-status-text').textContent = sync.message; $('signed-in-email').textContent = loggedIn ? `Ingelogd als ${sync.user.email || ''}` : ''; $('logout-btn').style.display = loggedIn ? 'block' : 'none'; $('signin-btn').style.display = loggedIn ? 'none' : 'block'; $('signup-btn').style.display = loggedIn ? 'none' : 'block'; }
+const renderThemeButtons = () => renderThemeButtonsView(state);
+const renderTimer = () => renderTimerView(state);
+const renderTasks = () => renderTasksView(state, toggleTask, deleteTask);
+const renderNotes = () => renderNotesView(state, openNoteEditor);
+const renderChat = () => renderChatView(state);
+const renderHome = () => renderHomeView(state);
+const renderProfile = () => renderProfileView(state, sync);
+const renderAuth = () => renderAuthView(sync);
 function showPage(name, showTabs = true) { document.querySelectorAll('.page').forEach(page => page.classList.toggle('active', page.id === `pg-${name}`)); document.querySelectorAll('.tab-item').forEach(tab => tab.classList.toggle('active', tab.id === `tab-${name}`)); $('tab-bar').style.display = showTabs && sync.user && state.profileComplete ? 'flex' : 'none'; if (name === 'notes') renderNotes(); if (name === 'ai') renderChat(); if (name === 'profile') renderProfile(); if (name === 'home') renderHome(); }
 function ensureShell() { if (!sync.user) return showPage('auth-landing', false); if (!state.profileComplete) return showPage('profile-setup', false); if (!$('pg-home').classList.contains('active')) showPage('home'); }
 function renderAll() { document.documentElement.dataset.theme = state.theme; renderTimer(); renderTasks(); renderNotes(); renderChat(); renderHome(); renderProfile(); ensureShell(); }
-function completeCurrentTimer() { const { minutes, subject } = completeTimer(state); awardXp(state, minutes * 2); save(); renderAll(); $('session-complete-msg').textContent = `Je hebt ${subject} gestudeerd voor ${minutes} minuten. +${minutes * 2} XP!`; $('session-modal').style.display = 'flex'; }
-function tickTimer() { const result = reconcileTimer(state); renderTimer(); if (result.completed) completeCurrentTimer(); }
+function completeCurrentTimer(sessionId) { const result = completeTimer(state, sessionId); if (!result.completed) return; awardXp(state, result.minutes * 2, `timer:${sessionId}`); save(); renderAll(); $('session-complete-msg').textContent = `Je hebt ${result.subject} gestudeerd voor ${result.minutes} minuten. +${result.minutes * 2} XP!`; $('session-modal').style.display = 'flex'; }
+function tickTimer() { const result = reconcileTimer(state); renderTimer(); if (result.completed) completeCurrentTimer(result.sessionId); }
 function setMode(mode) { if (setTimerMode(state, mode)) { save(); renderTimer(); } }
 function toggleTimer() { if (state.timerRunning) pauseTimer(state); else startTimer(state, $('focus-subject').value); save(); renderTimer(); }
 function resetTimer() { resetTimerState(state); save(); renderTimer(); }
 function filterTasks(filter) { state.taskFilter = ['all', 'todo', 'done'].includes(filter) ? filter : 'all'; save(); ['all', 'todo', 'done'].forEach(name => { const button = $(`filter-${name}`); button.style.fontWeight = name === state.taskFilter ? '600' : '400'; }); renderTasks(); }
-function addTask() { const input = $('new-task-input'); const task = createTask(state, input.value); if (!task) return; input.value = ''; awardXp(state, 10); save(); renderTasks(); renderHome(); toast('+10 XP verdiend!'); }
-function toggleTask(id) { const { award } = changeTask(state, id); if (award) awardXp(state, award); save(); renderTasks(); renderHome(); if (award) toast('+20 XP verdiend!'); }
+function addTask() { const input = $('new-task-input'); const task = createTask(state, input.value); if (!task) return; input.value = ''; awardXp(state, 10, `task:create:${task.id}`); save(); renderTasks(); renderHome(); toast('+10 XP verdiend!'); }
+function toggleTask(id) { const { item, award } = changeTask(state, id); if (award) awardXp(state, award, `task:complete:${item.id}`); save(); renderTasks(); renderHome(); if (award) toast('+20 XP verdiend!'); }
 function deleteTask(id) { if (removeTask(state, id)) { save(); renderTasks(); renderHome(); } }
 function openNoteEditor(id) { editingNoteId = id === -1 ? null : id; const note = state.notes.find(item => item.id === editingNoteId); $('note-title-input').value = note?.title || ''; $('note-body-input').value = note?.body || ''; $('notes-list-view').style.display = 'none'; $('notes-editor-view').style.display = 'flex'; $('note-title-input').focus(); }
 function closeNoteEditor() { editingNoteId = null; $('notes-list-view').style.display = 'block'; $('notes-editor-view').style.display = 'none'; }
-function saveNote() { const result = persistNote(state, editingNoteId, $('note-title-input').value, $('note-body-input').value); if (result.isNew) awardXp(state, 5); save(); closeNoteEditor(); renderNotes(); renderProfile(); if (result.isNew) toast('+5 XP verdiend!'); }
+function saveNote() { const result = persistNote(state, editingNoteId, $('note-title-input').value, $('note-body-input').value); if (result.isNew) awardXp(state, 5, `note:create:${result.item.id}`); save(); closeNoteEditor(); renderNotes(); renderProfile(); if (result.isNew) toast('+5 XP verdiend!'); }
 async function sendMessage() { const input = $('chat-input'); const question = input.value.trim(); if (!question || chatAbortController) return; input.value = ''; addChatMessage(state, 'user', question); save(); renderChat(); const typing = addBubble('ai', 'Studiemaatje denkt na…'); typing.classList.add('typing'); chatAbortController = new AbortController(); try { const reply = await askTutor({ prompt: question, subject: $('ai-subject').value, state, signal: chatAbortController.signal }); typing.remove(); addChatMessage(state, 'assistant', reply); save(); renderChat(); } catch (error) { typing.textContent = error.name === 'AbortError' ? 'Antwoord gestopt.' : error.message; } finally { chatAbortController = null; } }
 function sendChip(text) { $('chat-input').value = text; sendMessage(); }
 function finishOnboard() { const name = $('ob-name').value.trim(); if (!name) return toast('Vul eerst je naam in.'); state.name = name.slice(0, 80); state.age = $('ob-age').value.trim().slice(0, 3); state.studyLevel = $('ob-level').value; state.profileComplete = true; if (!state.lastStudyDate) { state.lastStudyDate = localDateKey(); state.streak = 1; } save(); renderAll(); showPage('home'); }
