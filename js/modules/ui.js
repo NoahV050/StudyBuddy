@@ -25,6 +25,7 @@ export function renderTimer(state) {
     if (!button) return;
     button.style.background = mode === state.timerMode ? '#534AB7' : '';
     button.style.color = mode === state.timerMode ? '#fff' : '';
+    button.setAttribute('aria-pressed', String(mode === state.timerMode));
   });
 }
 
@@ -230,6 +231,8 @@ export function renderHome(state) {
   byId('tasks-done').textContent = state.tasks.filter(task => task.done && !task.deleted).length;
   const percent = Math.min(100, Math.round(state.studiedMin / state.dailyGoalMin * 100));
   byId('goal-bar').style.width = `${percent}%`;
+  byId('goal-progress').setAttribute('aria-valuemax', String(state.dailyGoalMin));
+  byId('goal-progress').setAttribute('aria-valuenow', String(Math.min(state.studiedMin, state.dailyGoalMin)));
   byId('goal-progress-txt').textContent = `${Math.floor(state.studiedMin / 60) ? `${Math.floor(state.studiedMin / 60)}h ` : ''}${state.studiedMin % 60}m / ${Math.floor(state.dailyGoalMin / 60)}h`;
   const target = byId('upcoming-tasks');
   target.replaceChildren();
@@ -258,7 +261,11 @@ export function renderAuth(sync) {
 }
 
 export function renderThemeButtons(state) {
-  ['light', 'dark'].forEach(theme => byId(`theme-${theme}-btn`)?.classList.toggle('active-theme', state.theme === theme));
+  document.querySelectorAll('[data-theme-value]').forEach(button => {
+    const active = state.theme === button.dataset.themeValue;
+    button.classList.toggle('active-theme', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
 }
 
 export function renderProfile(state, sync) {
@@ -269,6 +276,8 @@ export function renderProfile(state, sync) {
   const next = xpToNext(state.xp);
   byId('xp-next-lbl').textContent = `${next.cur} / ${next.needed}`;
   byId('xp-bar').style.width = `${Math.min(100, Math.round(next.cur / Math.max(1, next.needed) * 100))}%`;
+  byId('xp-progress').setAttribute('aria-valuemax', String(next.needed));
+  byId('xp-progress').setAttribute('aria-valuenow', String(Math.min(next.cur, next.needed)));
   byId('streak-freeze-count').textContent = state.streakFreezeCount === 1
     ? 'Je hebt 1 reeks-vriezer beschikbaar.'
     : `Je hebt ${state.streakFreezeCount} reeks-vriezers beschikbaar.`;
@@ -286,6 +295,8 @@ export function renderProfile(state, sync) {
   state.weekData.forEach((minutes, index) => {
     const group = document.createElement('div');
     group.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center';
+    group.setAttribute('role', 'img');
+    group.setAttribute('aria-label', `${days[index]}, ${minutes} minuten`);
     const bar = document.createElement('div');
     bar.className = `bar${index === new Date().getDay() ? ' today' : ''}`;
     bar.style.height = `${Math.max(4, Math.round(minutes / highest * 52))}px`;
@@ -303,6 +314,7 @@ export function renderProfile(state, sync) {
   badges.forEach(([, name, icon, condition, description]) => {
     const item = document.createElement('div');
     item.className = `badge-item${condition(state) ? ' earned' : ''}`;
+    item.setAttribute('role', 'listitem');
     item.textContent = `${icon} ${name}`;
     item.title = description;
     item.setAttribute('aria-label', `${name}: ${description} ${condition(state) ? 'Behaald.' : 'Nog niet behaald.'}`);

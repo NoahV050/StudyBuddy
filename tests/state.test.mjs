@@ -28,7 +28,7 @@ test('migrates existing version 2 progress without dropping user content', () =>
     notes: [{ id: 'note-1', title: 'Biologie', body: 'Celstructuur' }]
   });
 
-  assert.equal(STATE_VERSION, 5);
+  assert.equal(STATE_VERSION, 6);
   assert.equal(migrated.version, STATE_VERSION);
   assert.equal(migrated.name, 'Sam');
   assert.equal(migrated.xp, 240);
@@ -59,4 +59,8 @@ test('does not reduce a streak when the device calendar moves backward', () => {
 
 test('rejects state created by an unsupported newer version', () => {
   assert.throws(() => normalizeState({ version: STATE_VERSION + 1 }), /nieuwere versie/);
+});
+
+test('new profiles follow the device theme by default', () => {
+  assert.equal(normalizeState({}).theme, 'auto');
 });

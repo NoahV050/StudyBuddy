@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#534AB7">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -11,28 +11,29 @@
   <title>Studiemaatje</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <body>
   <div id="phone">
-    <div class="status-bar">
+    <a class="skip-link" href="#screen">Ga naar inhoud</a>
+    <div class="status-bar" aria-hidden="true">
       <span id="clock">9:41</span>
       <span>Studiemaatje</span>
       <span>100%</span>
     </div>
-    <div class="toast" id="toast"></div>
-    <div class="screen" id="screen">
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+    <main class="screen" id="screen" tabindex="-1">
 
       <div class="page active" id="pg-auth-landing" style="justify-content:center">
         <div class="landing-topbar">
           <div class="landing-badge">Studie flow</div>
           <div class="landing-theme-toggle">
-            <button class="btn btn-sm theme-btn" onclick="setTheme('light')">Licht</button>
-            <button class="btn btn-sm theme-btn" onclick="setTheme('dark')">Donker</button>
+            <button class="btn btn-sm theme-btn" data-theme-value="light" onclick="setTheme('light')">Licht</button>
+            <button class="btn btn-sm theme-btn" data-theme-value="dark" onclick="setTheme('dark')">Donker</button>
+            <button class="btn btn-sm theme-btn" data-theme-value="auto" onclick="setTheme('auto')">Systeem</button>
           </div>
         </div>
         <div class="onboard-hero">
           <div class="onboard-icon">SB</div>
-          <div class="onboard-title">Studiemaatje</div>
+          <h1 class="onboard-title">Studiemaatje</h1>
           <div class="onboard-sub">Log in en ga verder waar je was gebleven.</div>
           <div class="onboard-sub" id="auth-landing-note" style="font-size:12px;margin-top:8px">Na het inloggen vragen we een paar profielgegevens zoals je naam en leeftijd.</div>
         </div>
@@ -45,26 +46,37 @@
       <div class="page" id="pg-profile-setup" style="justify-content:center">
         <div class="onboard-hero">
           <div class="onboard-icon">Me</div>
-          <div class="onboard-title">Maak je profiel aan</div>
+          <h1 class="onboard-title">Maak je profiel aan</h1>
         </div>
         <div style="padding:0 16px;display:flex;flex-direction:column;gap:12px">
           <div>
-            <div class="sec-hdr">Je naam</div>
-            <input id="ob-name" placeholder="bijv. Noah" style="width:100%;padding:12px;border-radius:10px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);font-size:15px">
+            <label class="sec-hdr" for="ob-name">Je naam</label>
+            <input id="ob-name" autocomplete="given-name" placeholder="bijv. Noah" style="width:100%;padding:12px;border-radius:10px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);font-size:15px">
           </div>
           <div>
-            <div class="sec-hdr">Leeftijd</div>
-            <input id="ob-age" type="number" placeholder="bijv. 16" style="width:100%;padding:12px;border-radius:10px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);font-size:15px">
+            <label class="sec-hdr" for="ob-age">Leeftijd (optioneel; voor passende uitleg)</label>
+            <input id="ob-age" type="number" min="10" max="100" inputmode="numeric" placeholder="bijv. 16" style="width:100%;padding:12px;border-radius:10px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);font-size:15px">
           </div>
           <div>
-            <div class="sec-hdr">Opleidingsniveau</div>
+            <label class="sec-hdr" for="ob-level">Opleidingsniveau</label>
             <select id="ob-level" style="width:100%;padding:12px;border-radius:10px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);font-size:15px">
-              <option>Middelbare school</option>
-              <option>MBO</option>
-              <option>HBO</option>
-              <option>Universiteit</option>
-              <option>Anders</option>
+              <option value="vmbo">vmbo</option>
+              <option value="havo">havo</option>
+              <option value="vwo">vwo</option>
+              <option value="Middelbare school">Middelbare school</option>
+              <option value="MBO">MBO</option>
+              <option value="HBO">HBO</option>
+              <option value="Universiteit">Universiteit</option>
+              <option value="Anders">Anders</option>
             </select>
+          </div>
+          <fieldset class="onboarding-subjects">
+            <legend>Vakken die je volgt</legend>
+            <div id="ob-subject-options" class="onboarding-subject-options"></div>
+          </fieldset>
+          <div>
+            <label class="sec-hdr" for="ob-goal">Je eerste dagdoel (minuten)</label>
+            <input id="ob-goal" type="number" min="5" max="720" step="5" value="120">
           </div>
           <button class="btn btn-primary btn-full" onclick="finishOnboard()">Profiel opslaan</button>
         </div>
@@ -73,7 +85,7 @@
       <div class="page" id="pg-home">
         <div style="display:flex;justify-content:space-between;margin-bottom:12px">
           <div>
-            <div class="page-title" id="greeting">Goedemorgen</div>
+            <h1 class="page-title" id="greeting">Goedemorgen</h1>
             <div class="page-sub" id="home-sub">Klaar om te leren?</div>
           </div>
           <div class="streak-fire">Reeks <span id="streak-num">0</span></div>
@@ -83,7 +95,7 @@
             <span style="font-size:13px;font-weight:500">Doel van vandaag</span>
             <span style="font-size:12px;color:var(--color-text-secondary)" id="goal-progress-txt">0 / 2h</span>
           </div>
-          <div class="progress-track"><div class="progress-fill" id="goal-bar" style="width:0%"></div></div>
+          <div class="progress-track" role="progressbar" aria-label="Dagdoel" aria-valuemin="0" aria-valuemax="120" aria-valuenow="0" id="goal-progress"><div class="progress-fill" id="goal-bar" style="width:0%"></div></div>
           <div style="margin-top:12px">
             <button class="btn btn-primary btn-full" onclick="goTo('focus')">Start focussessie</button>
           </div>
@@ -114,7 +126,7 @@
 
       <div class="page" id="pg-focus" style="align-items:center">
         <div style="width:100%">
-          <div class="page-title">Focustimer</div>
+          <h1 class="page-title">Focustimer</h1>
         </div>
         <div style="display:flex;gap:8px;margin-bottom:20px;width:100%">
           <button class="btn btn-sm" id="mode-pomo" onclick="setMode('pomo')" style="flex:1">Pomodoro 25m</button>
@@ -137,7 +149,7 @@
             <circle class="timer-ring-fill" cx="90" cy="90" r="82" id="timer-arc" stroke-dasharray="515" stroke-dashoffset="0"/>
           </svg>
           <div class="timer-center">
-            <div class="timer-time" id="timer-display">25:00</div>
+            <div class="timer-time" id="timer-display" role="timer" aria-live="off">25:00</div>
             <div class="timer-mode" id="timer-mode-lbl">Focus</div>
           </div>
         </div>
@@ -147,6 +159,7 @@
         </div>
         <div style="width:100%">
           <div class="sec-hdr">Vak</div>
+          <label class="sr-only" for="focus-subject">Vak voor je focussessie</label>
           <select id="focus-subject" style="width:100%;padding:10px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary)">
             <option>Wiskunde</option><option>Natuurkunde</option><option>Geschiedenis</option><option>Nederlands</option><option>Anders</option>
           </select>
@@ -159,7 +172,8 @@
 
       <div class="page" id="pg-ai" style="padding:0">
         <div style="padding:14px 14px 8px">
-          <div class="page-title">AI-tutor</div>
+          <h1 class="page-title">AI-tutor</h1>
+          <label class="sr-only" for="ai-subject">Vak voor de tutor</label>
           <select id="ai-subject" onchange="selectTutorSubject(this.value)" style="width:100%;padding:8px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);margin-bottom:10px">
             <option>Wiskunde</option><option>Natuurkunde</option><option>Geschiedenis</option><option>Nederlands</option><option>Anders</option>
           </select>
@@ -186,6 +200,7 @@
           <input id="tutor-history-search" placeholder="Zoek in dit vak…" oninput="searchTutorHistory()">
         </div>
         <div class="chat-input-row">
+          <label class="sr-only" for="chat-input">Stel een vraag aan je tutor</label>
           <input id="chat-input" maxlength="4000" placeholder="Stel een vraag..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}">
           <button class="send-btn" type="button" aria-label="Stuur je vraag" onclick="sendMessage()">
             <svg width="14" height="14" viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
@@ -194,7 +209,7 @@
       </div>
 
       <div class="page" id="pg-tasks">
-        <div class="page-title">Taken</div>
+        <h1 class="page-title">Taken</h1>
         <div style="display:flex;gap:8px;margin-bottom:12px">
           <button class="btn btn-sm" id="filter-all" onclick="filterTasks('all')" style="font-weight:500">Alles</button>
           <button class="btn btn-sm" id="filter-todo" onclick="filterTasks('todo')">Te doen</button>
@@ -207,14 +222,15 @@
           <label for="task-due-date">Deadline (optioneel)</label>
           <input id="task-due-date" type="date" class="learning-select">
           <div class="add-task-row">
+            <label class="sr-only" for="new-task-input">Nieuwe taak</label>
             <input id="new-task-input" maxlength="300" placeholder="Voeg een taak toe..." onkeydown="if(event.key==='Enter')addTask()">
-            <button class="btn btn-sm" onclick="addTask()">+</button>
+            <button class="btn btn-sm" type="button" aria-label="Taak toevoegen" onclick="addTask()">+</button>
           </div>
         </div>
       </div>
 
       <div class="page" id="pg-learn">
-        <div class="page-title">Leren</div>
+        <h1 class="page-title">Leren</h1>
         <div class="page-sub">Vakken, herhaalkaartjes en je planning op één plek.</div>
         <section class="card learning-section">
           <h2 class="sec-hdr">Je vakken</h2>
@@ -290,12 +306,12 @@
 
       <div class="page" id="pg-notes">
         <div id="notes-list-view">
-        <div class="page-title">Notities</div>
+        <h1 class="page-title">Notities</h1>
         <button class="btn btn-primary btn-full" onclick="openNoteEditor(-1)" style="margin-bottom:12px">+ Nieuwe notitie</button>
         <div id="notes-list"></div>
         </div>
         <div class="note-editor" id="notes-editor-view" style="display:none;flex:1;flex-direction:column;gap:10px">
-          <div style="display:flex;justify-content:space-between;align-items:center"><div class="page-title">Notitie</div><button class="btn btn-sm" onclick="closeNoteEditor()">Annuleren</button></div>
+          <div style="display:flex;justify-content:space-between;align-items:center"><h1 class="page-title">Notitie</h1><button class="btn btn-sm" onclick="closeNoteEditor()">Annuleren</button></div>
           <label class="sec-hdr" for="note-title-input">Titel</label>
           <input id="note-title-input" maxlength="300" placeholder="Titel van je notitie">
           <label class="sec-hdr" for="note-body-input">Inhoud</label>
@@ -305,6 +321,7 @@
       </div>
 
       <div class="page" id="pg-profile">
+        <h1 class="page-title">Profiel</h1>
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
           <div style="width:48px;height:48px;border-radius:50%;background:var(--purple-light);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;color:var(--purple)" id="avatar-initials">A</div>
           <div>
@@ -325,18 +342,19 @@
             <span style="font-size:13px;font-weight:500">XP naar volgende niveau</span>
             <span style="font-size:12px;color:var(--color-text-secondary)" id="xp-next-lbl">0 / 200</span>
           </div>
-          <div class="xp-bar-track"><div class="xp-bar-fill" id="xp-bar" style="width:0%"></div></div>
+          <div class="xp-bar-track" id="xp-progress" role="progressbar" aria-label="Voortgang naar volgend niveau" aria-valuemin="0" aria-valuemax="200" aria-valuenow="0"><div class="xp-bar-fill" id="xp-bar" style="width:0%"></div></div>
         </div>
         <div class="sec-hdr">Deze week</div>
         <div class="card" style="margin-bottom:12px">
           <div id="bar-chart-wrap"></div>
         </div>
         <div class="sec-hdr">Badges</div>
-        <div class="badge-grid" id="badge-grid"></div>
+        <div class="badge-grid" id="badge-grid" role="list" aria-label="Badges en voorwaarden"></div>
         <div class="sec-hdr" style="margin-top:16px">Thema</div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-sm theme-btn" id="theme-light-btn" onclick="setTheme('light')">Licht</button>
-          <button class="btn btn-sm theme-btn" id="theme-dark-btn" onclick="setTheme('dark')">Donker</button>
+          <button class="btn btn-sm theme-btn" id="theme-light-btn" data-theme-value="light" onclick="setTheme('light')">Licht</button>
+          <button class="btn btn-sm theme-btn" id="theme-dark-btn" data-theme-value="dark" onclick="setTheme('dark')">Donker</button>
+          <button class="btn btn-sm theme-btn" id="theme-auto-btn" data-theme-value="auto" onclick="setTheme('auto')">Systeem</button>
         </div>
         <div class="sec-hdr" style="margin-top:12px">Account</div>
         <div class="pill" id="auth-status-pill" style="margin-bottom:4px">Uitgelogd</div>
@@ -345,43 +363,44 @@
         <button class="btn btn-full" onclick="logoutUser()" id="logout-btn" style="display:none">Uitloggen</button>
       </div>
 
-    </div>
+    </main>
 
-    <div class="tab-bar" id="tab-bar" style="display:none">
-      <div class="tab-item active" id="tab-home" onclick="goTo('home')">
-        <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M3 10.8 12 3l9 7.8v9.7a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1z"/></svg></div>
-        <div class="tab-label">Start</div>
-      </div>
-      <div class="tab-item" id="tab-focus" onclick="goTo('focus')">
-        <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-3.2a5.8 5.8 0 1 1-1.7-4.1L18 6A8.9 8.9 0 0 0 12 3zm7.7 0L14 8.7V10h1.3L21 4.3z"/></svg></div>
-        <div class="tab-label">Focus</div>
-      </div>
-      <div class="tab-item" id="tab-ai" onclick="goTo('ai')">
-        <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M12 2.5 14 7l4.9.5-3.7 3.2 1.1 4.8L12 13.1 7.7 15.5l1.1-4.8L5.1 7.5 10 7z"/></svg></div>
-        <div class="tab-label">Tutor</div>
-      </div>
-      <div class="tab-item" id="tab-tasks" onclick="goTo('tasks')">
-        <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M9.2 17.6 4.8 13.2l1.7-1.7 2.7 2.7 8.3-8.3 1.7 1.7zM4 5h11v2H4zm0 12h7v2H4z"/></svg></div>
-        <div class="tab-label">Taken</div>
-      </div>
-      <div class="tab-item" id="tab-learn" onclick="goTo('learn')">
-        <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5zm2.5-.5a.5.5 0 0 0 0 1H17V4zM6.5 17H17V7H6.5a2.5 2.5 0 0 1-1-.2v10.4c.3-.1.7-.2 1-.2"/></svg></div>
-        <div class="tab-label">Leren</div>
-      </div>
-      <div class="tab-item" id="tab-notes" onclick="goTo('notes')">
-        <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M6 3.5h9.5L20 8v12a.5.5 0 0 1-.5.5h-13A.5.5 0 0 1 6 20zM14.5 4.9V9H18z"/></svg></div>
-        <div class="tab-label">Notities</div>
-      </div>
-      <div class="tab-item" id="tab-profile" onclick="goTo('profile')">
-        <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M12 12a4.2 4.2 0 1 0-4.2-4.2A4.2 4.2 0 0 0 12 12zm0 2.2c-4 0-7.2 2.1-7.2 4.6V21h14.4v-2.2c0-2.5-3.2-4.6-7.2-4.6z"/></svg></div>
-        <div class="tab-label">Profiel</div>
-      </div>
-    </div>
+    <nav class="tab-bar" id="tab-bar" aria-label="Hoofdnavigatie" style="display:none">
+      <button type="button" class="tab-item active" id="tab-home" aria-current="page" onclick="goTo('home')">
+        <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10.8 12 3l9 7.8v9.7a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1z"/></svg></span>
+        <span class="tab-label">Start</span>
+      </button>
+      <button type="button" class="tab-item" id="tab-focus" onclick="goTo('focus')">
+        <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-3.2a5.8 5.8 0 1 1-1.7-4.1L18 6A8.9 8.9 0 0 0 12 3zm7.7 0L14 8.7V10h1.3L21 4.3z"/></svg></span>
+        <span class="tab-label">Focus</span>
+      </button>
+      <button type="button" class="tab-item" id="tab-ai" onclick="goTo('ai')">
+        <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2.5 14 7l4.9.5-3.7 3.2 1.1 4.8L12 13.1 7.7 15.5l1.1-4.8L5.1 7.5 10 7z"/></svg></span>
+        <span class="tab-label">Tutor</span>
+      </button>
+      <button type="button" class="tab-item" id="tab-tasks" onclick="goTo('tasks')">
+        <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9.2 17.6 4.8 13.2l1.7-1.7 2.7 2.7 8.3-8.3 1.7 1.7zM4 5h11v2H4zm0 12h7v2H4z"/></svg></span>
+        <span class="tab-label">Taken</span>
+      </button>
+      <button type="button" class="tab-item" id="tab-learn" onclick="goTo('learn')">
+        <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5zm2.5-.5a.5.5 0 0 0 0 1H17V4zM6.5 17H17V7H6.5a2.5 2.5 0 0 1-1-.2v10.4c.3-.1.7-.2 1-.2"/></svg></span>
+        <span class="tab-label">Leren</span>
+      </button>
+      <button type="button" class="tab-item" id="tab-notes" onclick="goTo('notes')">
+        <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3.5h9.5L20 8v12a.5.5 0 0 1-.5.5h-13A.5.5 0 0 1 6 20zM14.5 4.9V9H18z"/></svg></span>
+        <span class="tab-label">Notities</span>
+      </button>
+      <button type="button" class="tab-item" id="tab-profile" onclick="goTo('profile')">
+        <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12a4.2 4.2 0 1 0-4.2-4.2A4.2 4.2 0 0 0 12 12zm0 2.2c-4 0-7.2 2.1-7.2 4.6V21h14.4v-2.2c0-2.5-3.2-4.6-7.2-4.6z"/></svg></span>
+        <span class="tab-label">Profiel</span>
+      </button>
+    </nav>
 
     <div class="modal-overlay" id="api-modal" style="display:none">
-      <div class="modal-box">
-        <div class="modal-title">Google AI Studio API-sleutel</div>
+      <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="api-modal-title">
+        <div class="modal-title" id="api-modal-title">Google AI Studio API-sleutel</div>
         <div class="modal-sub">Haal je sleutel via aistudio.google.com</div>
+        <label class="sr-only" for="api-key-input">API-sleutel</label>
         <input class="modal-input" id="api-key-input" type="password" placeholder="AIza...">
         <div id="api-test-status" style="font-size:12px;margin-bottom:10px"></div>
         <div style="display:flex;gap:8px">
@@ -392,20 +411,22 @@
     </div>
 
     <div class="modal-overlay" id="session-modal" style="display:none">
-      <div class="modal-box" style="text-align:center">
+      <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="session-modal-title" style="text-align:center">
         <div style="font-size:36px;margin-bottom:8px">+</div>
-        <div class="modal-title">Sessie afgerond!</div>
+        <div class="modal-title" id="session-modal-title">Sessie afgerond!</div>
         <div style="font-size:13px;color:var(--color-text-secondary);margin:6px 0 14px" id="session-complete-msg">Goed bezig!</div>
         <button class="btn btn-primary btn-full" onclick="closeSessionModal()">XP ontvangen</button>
       </div>
     </div>
 
     <div class="modal-overlay" id="auth-modal" style="display:none">
-      <div class="modal-box">
+      <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
         <div class="modal-title" id="auth-modal-title">Inloggen</div>
         <div class="modal-sub" id="auth-modal-sub">Log in om je voortgang te laden.</div>
-        <input class="modal-input" id="auth-email-input" type="email" placeholder="E-mailadres">
-        <input class="modal-input" id="auth-password-input" type="password" placeholder="Wachtwoord">
+        <label class="sr-only" for="auth-email-input">E-mailadres</label>
+        <input class="modal-input" id="auth-email-input" type="email" autocomplete="email" placeholder="E-mailadres">
+        <label class="sr-only" for="auth-password-input">Wachtwoord</label>
+        <input class="modal-input" id="auth-password-input" type="password" autocomplete="current-password" placeholder="Wachtwoord">
         <div id="auth-modal-status" style="font-size:12px;margin-bottom:10px"></div>
         <div style="display:flex;gap:8px">
           <button class="btn" onclick="closeAuthModal()">Annuleren</button>
@@ -417,7 +438,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
-  <script type="module" src="js/script.js?version=11"></script>
+  <script type="module" src="js/script.js?version=13"></script>
   <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');</script>
 </body>
 </html>

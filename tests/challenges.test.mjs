@@ -59,8 +59,15 @@ test('a streak freeze can cover only one missed day and is consumed once', () =>
 
 test('migrates existing version 4 accounts with one streak freeze', () => {
   const state = normalizeState({ version: 4, name: 'Noor', streak: 2 });
-  assert.equal(state.version, 5);
+  assert.equal(state.version, 6);
   assert.equal(state.streakFreezeCount, 1);
+});
+
+test('migrates version 5 preferences and keeps the selected theme', () => {
+  const state = normalizeState({ version: 5, theme: 'dark', preferredSubjectIds: ['subject-wiskunde'] });
+  assert.equal(state.version, 6);
+  assert.equal(state.theme, 'dark');
+  assert.deepEqual(state.preferredSubjectIds, ['subject-wiskunde']);
 });
 
 test('sync does not restore a streak freeze already spent on another device', () => {

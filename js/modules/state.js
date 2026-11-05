@@ -1,4 +1,4 @@
-export const STATE_VERSION = 5;
+export const STATE_VERSION = 6;
 
 export function localDateKey(date = new Date()) {
   const year = date.getFullYear();
@@ -34,6 +34,7 @@ export function createDefaultState() {
     name: 'Student', age: '', studyLevel: 'Middelbare school', profileComplete: false,
     xp: 0, xpBase: 0, xpEvents: [], level: 0, streak: 0, lastStudyDate: null,
     streakFreezeCount: 1, streakFreezeUsedAt: '',
+    preferredSubjectIds: [],
     dailyGoalMin: 120, studiedMin: 0, sessionsToday: 0, dayKey,
     weekData: [0, 0, 0, 0, 0, 0, 0], weekKey,
     studyBase: { dayKey, studiedMin: 0, sessionsToday: 0, weekKey, weekData: [0, 0, 0, 0, 0, 0, 0] },
@@ -49,7 +50,7 @@ export function createDefaultState() {
     tutorSubject: 'Wiskunde', tutorMode: 'uitleggen', taskSubject: 'Wiskunde',
     timerMode: 'pomo', timerSeconds: 1500, timerTotal: 1500, timerCustomSeconds: 1500,
     timerRunning: false, timerEndsAt: null, timerSessionId: null, timerSubject: 'Wiskunde', timerTaskId: '',
-    taskFilter: 'all', theme: 'light'
+    taskFilter: 'all', theme: 'auto'
   };
 }
 
@@ -117,7 +118,21 @@ function migrateV4ToV5(state) {
   };
 }
 
-const MIGRATIONS = { 1: migrateV1ToV2, 2: migrateV2ToV3, 3: migrateV3ToV4, 4: migrateV4ToV5 };
+function migrateV5ToV6(state) {
+  return {
+    ...state,
+    theme: ['light', 'dark', 'auto'].includes(state.theme) ? state.theme : 'auto',
+    preferredSubjectIds: asArray(state.preferredSubjectIds).filter(id => typeof id === 'string').slice(0, 100)
+  };
+}
+
+const MIGRATIONS = {
+  1: migrateV1ToV2,
+  2: migrateV2ToV3,
+  3: migrateV3ToV4,
+  4: migrateV4ToV5,
+  5: migrateV5ToV6
+};
 
 function migrateState(candidate) {
   let state = { ...candidate };
@@ -305,7 +320,8 @@ export function normalizeState(candidate) {
   next.sessionsToday = Math.max(0, asNumber(next.sessionsToday));
   next.studyBase = normalizeStudyBase(next.studyBase, next);
   next.studyEvents = normalizeStudyEvents(next.studyEvents);
-  next.theme = next.theme === 'dark' ? 'dark' : 'light';
+  next.theme = ['light', 'dark', 'auto'].includes(next.theme) ? next.theme : 'auto';
+  next.preferredSubjectIds = asArray(next.preferredSubjectIds).filter(id => typeof id === 'string').slice(0, 100);
   next.taskFilter = ['all', 'todo', 'done'].includes(next.taskFilter) ? next.taskFilter : 'all';
   next.timerMode = MODES[next.timerMode] ? next.timerMode : 'pomo';
   next.timerCustomSeconds = Math.max(300, Math.min(10800, asNumber(next.timerCustomSeconds, 1500)));

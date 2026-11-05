@@ -31,19 +31,63 @@ let flashcardRevealed = false;
 const $ = byId;
 const save = () => { rolloverDailyState(state); touch(state); saveState(sync.user, state); auth?.scheduleSave(); };
 function toast(message) { const element = $('toast'); element.textContent = message; element.classList.add('show'); setTimeout(() => element.classList.remove('show'), 2200); }
-function setTheme(theme) { state.theme = theme === 'dark' ? 'dark' : 'light'; document.documentElement.dataset.theme = state.theme; save(); renderThemeButtons(); }
+function setTheme(theme) { state.theme = ['light', 'dark', 'auto'].includes(theme) ? theme : 'auto'; document.documentElement.dataset.theme = state.theme; save(); renderThemeButtons(); }
 const renderThemeButtons = () => renderThemeButtonsView(state);
 const renderTimer = () => renderTimerView(state);
-const renderTasks = () => renderTasksView(state, toggleTask, deleteTask);
+const renderTasks = () => {
+  renderTasksView(state, toggleTask, deleteTask);
+  ['all', 'todo', 'done'].forEach(name => $(`filter-${name}`)?.setAttribute('aria-pressed', String(name === state.taskFilter)));
+};
 const renderNotes = () => renderNotesView(state, openNoteEditor);
 const renderChat = () => renderChatView(state, $('ai-subject').value, $('tutor-history-search').value);
 const renderHome = () => renderHomeView(state);
 const renderProfile = () => renderProfileView(state, sync);
 const renderAuth = () => renderAuthView(sync);
 const renderLearning = () => renderLearningView(state, learningSubjectId, flashcardRevealed);
-function showPage(name, showTabs = true) { document.querySelectorAll('.page').forEach(page => page.classList.toggle('active', page.id === `pg-${name}`)); document.querySelectorAll('.tab-item').forEach(tab => tab.classList.toggle('active', tab.id === `tab-${name}`)); $('tab-bar').style.display = showTabs && sync.user && state.profileComplete ? 'flex' : 'none'; if (name === 'notes') renderNotes(); if (name === 'ai') renderChat(); if (name === 'learn') renderLearning(); if (name === 'profile') renderProfile(); if (name === 'home') renderHome(); }
+function renderOnboarding(stateToRender = state) {
+  const options = $('ob-subject-options');
+  if (!options) return;
+  options.replaceChildren();
+  const subjects = stateToRender.subjects.filter(subject => !subject.deleted);
+  const preferred = new Set(stateToRender.preferredSubjectIds);
+  subjects.forEach((subject, index) => {
+    const label = document.createElement('label');
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.name = 'onboarding-subject';
+    checkbox.value = subject.id;
+    checkbox.checked = preferred.size ? preferred.has(subject.id) : index === 0;
+    const name = document.createElement('span');
+    name.textContent = subject.name;
+    label.append(checkbox, name);
+    options.append(label);
+  });
+  $('ob-goal').value = stateToRender.dailyGoalMin;
+}
+function showPage(name, showTabs = true) {
+  document.querySelectorAll('.page').forEach(page => {
+    const active = page.id === `pg-${name}`;
+    page.classList.toggle('active', active);
+    if (active) {
+      page.tabIndex = -1;
+      page.focus({ preventScroll: true });
+    }
+  });
+  document.querySelectorAll('.tab-item').forEach(tab => {
+    const active = tab.id === `tab-${name}`;
+    tab.classList.toggle('active', active);
+    if (active) tab.setAttribute('aria-current', 'page');
+    else tab.removeAttribute('aria-current');
+  });
+  $('tab-bar').style.display = showTabs && sync.user && state.profileComplete ? 'flex' : 'none';
+  if (name === 'notes') renderNotes();
+  if (name === 'ai') renderChat();
+  if (name === 'learn') renderLearning();
+  if (name === 'profile') renderProfile();
+  if (name === 'home') renderHome();
+}
 function ensureShell() { if (!sync.user) return showPage('auth-landing', false); if (!state.profileComplete) return showPage('profile-setup', false); if (!$('pg-home').classList.contains('active')) showPage('home'); }
-function renderAll() { document.documentElement.dataset.theme = state.theme; renderTimer(); renderTasks(); renderNotes(); renderChat(); renderHome(); renderProfile(); renderLearning(); ensureShell(); }
+function renderAll() { document.documentElement.dataset.theme = state.theme; renderOnboarding(); renderTimer(); renderTasks(); renderNotes(); renderChat(); renderHome(); renderProfile(); renderLearning(); ensureShell(); }
 function completeCurrentTimer(sessionId, taskId) { const result = completeTimer(state, sessionId, new Date(), taskId); if (!result.completed) return; awardXp(state, result.minutes * 2, `timer:${sessionId}`); save(); renderAll(); $('session-complete-msg').textContent = `Je hebt ${result.subject} gestudeerd voor ${result.minutes} minuten. +${result.minutes * 2} XP!`; $('session-modal').style.display = 'flex'; if ('Notification' in window && Notification.permission === 'granted') new Notification('Focussessie afgerond', { body: `${result.minutes} minuten ${result.subject}. Goed gewerkt!` }); }
 function tickTimer() { const result = reconcileTimer(state); renderTimer(); if (result.completed) completeCurrentTimer(result.sessionId, result.taskId); }
 function setMode(mode) { if (setTimerMode(state, mode)) { save(); renderTimer(); } }
@@ -51,7 +95,7 @@ function setCustomFocusDuration() { if (setCustomDuration(state, $('custom-focus
 function enableTimerNotifications() { if (!('Notification' in window)) return toast('Deze browser ondersteunt geen meldingen.'); Notification.requestPermission().then(permission => { $('timer-notification-btn').textContent = permission === 'granted' ? 'Meldingen staan aan' : 'Meldingen niet toegestaan'; }).catch(() => toast('Meldingen konden niet worden ingeschakeld.')); }
 function toggleTimer() { if (state.timerRunning) pauseTimer(state); else startTimer(state, $('focus-subject').value, $('focus-task').value); save(); renderTimer(); }
 function resetTimer() { resetTimerState(state); save(); renderTimer(); }
-function filterTasks(filter) { state.taskFilter = ['all', 'todo', 'done'].includes(filter) ? filter : 'all'; save(); ['all', 'todo', 'done'].forEach(name => { const button = $(`filter-${name}`); button.style.fontWeight = name === state.taskFilter ? '600' : '400'; }); renderTasks(); }
+function filterTasks(filter) { state.taskFilter = ['all', 'todo', 'done'].includes(filter) ? filter : 'all'; save(); ['all', 'todo', 'done'].forEach(name => { const button = $(`filter-${name}`); button.style.fontWeight = name === state.taskFilter ? '600' : '400'; button.setAttribute('aria-pressed', String(name === state.taskFilter)); }); renderTasks(); }
 function addTask() { const input = $('new-task-input'); const subject = $('task-subject').value || 'Algemeen'; state.taskSubject = subject; const task = createTask(state, input.value, subject, $('task-due-date').value); if (!task) return; input.value = ''; $('task-due-date').value = ''; awardXp(state, 10, `task:create:${task.id}`); save(); renderTasks(); renderHome(); renderLearning(); toast('+10 XP verdiend!'); }
 function toggleTask(id) { const { item, award } = changeTask(state, id); if (award) awardXp(state, award, `task:complete:${item.id}`); save(); renderTasks(); renderHome(); renderLearning(); if (award) toast('+20 XP verdiend!'); }
 function deleteTask(id) { if (removeTask(state, id)) { save(); renderTasks(); renderHome(); renderLearning(); } }
@@ -204,9 +248,37 @@ function saveTutorAsNote() {
   renderNotes();
   toast('De uitleg is als notitie bewaard.');
 }
-function finishOnboard() { const name = $('ob-name').value.trim(); if (!name) return toast('Vul eerst je naam in.'); state.name = name.slice(0, 80); state.age = $('ob-age').value.trim().slice(0, 3); state.studyLevel = $('ob-level').value; state.profileComplete = true; if (!state.lastStudyDate) { state.lastStudyDate = localDateKey(); state.streak = 1; } save(); renderAll(); showPage('home'); }
-function editProfile() { $('ob-name').value = state.name === 'Student' ? '' : state.name; $('ob-age').value = state.age; $('ob-level').value = state.studyLevel; showPage('profile-setup', false); }
-let authMode = 'signin'; function showAuthModal(mode) { authMode = mode; $('auth-modal-title').textContent = mode === 'signin' ? 'Inloggen' : 'Account maken'; $('auth-submit-btn').textContent = mode === 'signin' ? 'Inloggen' : 'Account maken'; $('auth-modal').style.display = 'flex'; }
+function finishOnboard() {
+  const name = $('ob-name').value.trim();
+  const age = $('ob-age').value.trim();
+  if (!name) return toast('Vul eerst je naam in.');
+  if (age && (Number(age) < 10 || Number(age) > 100)) return toast('Vul een leeftijd tussen 10 en 100 in, of laat dit veld leeg.');
+  state.name = name.slice(0, 80);
+  state.age = age.slice(0, 3);
+  state.studyLevel = $('ob-level').value;
+  state.dailyGoalMin = Math.max(5, Math.min(720, Number($('ob-goal').value) || 120));
+  state.preferredSubjectIds = [...document.querySelectorAll('input[name="onboarding-subject"]:checked')].map(input => input.value);
+  const primarySubject = state.subjects.find(subject => state.preferredSubjectIds.includes(subject.id));
+  if (primarySubject) {
+    state.taskSubject = primarySubject.name;
+    state.tutorSubject = primarySubject.name;
+    state.timerSubject = primarySubject.name;
+    learningSubjectId = primarySubject.id;
+  }
+  state.profileComplete = true;
+  if (!state.lastStudyDate) { state.lastStudyDate = localDateKey(); state.streak = 1; }
+  save();
+  renderAll();
+  showPage('home');
+}
+function editProfile() {
+  $('ob-name').value = state.name === 'Student' ? '' : state.name;
+  $('ob-age').value = state.age;
+  $('ob-level').value = state.studyLevel;
+  renderOnboarding();
+  showPage('profile-setup', false);
+}
+let authMode = 'signin'; function showAuthModal(mode) { authMode = mode; $('auth-modal-title').textContent = mode === 'signin' ? 'Inloggen' : 'Account maken'; $('auth-submit-btn').textContent = mode === 'signin' ? 'Inloggen' : 'Account maken'; $('auth-password-input').autocomplete = mode === 'signin' ? 'current-password' : 'new-password'; $('auth-modal').style.display = 'flex'; $('auth-email-input').focus(); }
 function closeAuthModal() { $('auth-modal').style.display = 'none'; $('auth-modal-status').textContent = ''; }
 async function submitAuth() { const email = $('auth-email-input').value.trim(); const password = $('auth-password-input').value; if (!email || password.length < 6) return $('auth-modal-status').textContent = 'Vul een e-mailadres en een wachtwoord van minimaal 6 tekens in.'; try { const signedIn = authMode === 'signin' ? (await auth.signIn(email, password), true) : await auth.signUp(email, password); if (signedIn) closeAuthModal(); else $('auth-modal-status').textContent = 'Controleer je e-mail om je account te bevestigen.'; } catch (error) { $('auth-modal-status').textContent = error.message || 'Inloggen is mislukt.'; } }
 async function logoutUser() { try { await auth.signOut(); toast('Uitgelogd'); } catch { toast('Uitloggen is niet gelukt.'); } }

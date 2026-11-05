@@ -1,9 +1,9 @@
-const CACHE_NAME = 'studiemaatje-v12';
+const CACHE_NAME = 'studiemaatje-v14';
 const urlsToCache = [
   '/',
   '/index.html',
   '/css/styles.css',
-  '/js/script.js?version=11',
+  '/js/script.js?version=13',
   '/js/config.js',
   '/js/modules/state.js',
   '/js/modules/storage.js',
@@ -25,7 +25,7 @@ self.addEventListener('install', event => {
       .then(async cache => {
         await Promise.all(urlsToCache.map(async url => {
           const requestUrl = new URL(url, self.location.origin);
-          requestUrl.searchParams.set('cache-version', '12');
+          requestUrl.searchParams.set('cache-version', '14');
           const response = await fetch(requestUrl, { cache: 'reload' });
           await cache.put(url, response);
         }));
