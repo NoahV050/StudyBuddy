@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDefaultState, localDateKey, localWeekKey, normalizeState } from '../js/modules/state.js';
-import { completeTimer, reconcileTimer } from '../js/modules/timer.js';
+import { completeTimer, reconcileTimer, resetTimer, setCustomDuration, startTimer } from '../js/modules/timer.js';
 import { awardXp } from '../js/modules/gamification.js';
 
 test('recovers an expired timer and awards its session exactly once', () => {
@@ -54,4 +54,21 @@ test('records a session against the completion day after midnight', () => {
   assert.equal(state.sessionsToday, 1);
   assert.equal(state.streak, 3);
   assert.equal(state.weekData[today.getDay()], 25);
+});
+
+test('supports a custom session and links its completion to a task and subject', () => {
+  const state = createDefaultState();
+  const task = { id: 'task-1', title: 'Oefentoets maken', done: false, deleted: false };
+  state.tasks.push(task);
+  assert.equal(setCustomDuration(state, 40), true);
+  assert.equal(state.timerTotal, 2400);
+  assert.equal(startTimer(state, 'Natuurkunde', task.id), true);
+  const sessionId = state.timerSessionId;
+  const result = completeTimer(state, sessionId);
+
+  assert.equal(result.minutes, 40);
+  assert.equal(state.studyEvents[0].subject, 'Natuurkunde');
+  assert.equal(state.studyEvents[0].taskId, task.id);
+  resetTimer(state);
+  assert.equal(state.timerSeconds, 2400);
 });

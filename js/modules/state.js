@@ -1,4 +1,4 @@
-export const STATE_VERSION = 3;
+export const STATE_VERSION = 4;
 
 export function localDateKey(date = new Date()) {
   const year = date.getFullYear();
@@ -38,14 +38,21 @@ export function createDefaultState() {
     studyBase: { dayKey, studiedMin: 0, sessionsToday: 0, weekKey, weekData: [0, 0, 0, 0, 0, 0, 0] },
     studyEvents: [],
     tasks: [], notes: [], chatHistory: [], sessionLog: [],
-    tutorSubject: 'Wiskunde', tutorMode: 'uitleggen',
-    timerMode: 'pomo', timerSeconds: 1500, timerTotal: 1500,
-    timerRunning: false, timerEndsAt: null, timerSessionId: null, timerSubject: 'Wiskunde',
+    subjects: [
+      { id: 'subject-wiskunde', name: 'Wiskunde', color: '#6750A4', goalMin: 60, examDate: '', deleted: false },
+      { id: 'subject-natuurkunde', name: 'Natuurkunde', color: '#2F6F8F', goalMin: 60, examDate: '', deleted: false },
+      { id: 'subject-geschiedenis', name: 'Geschiedenis', color: '#A64D32', goalMin: 60, examDate: '', deleted: false },
+      { id: 'subject-nederlands', name: 'Nederlands', color: '#32745A', goalMin: 60, examDate: '', deleted: false }
+    ],
+    flashcards: [], studyPlan: [],
+    tutorSubject: 'Wiskunde', tutorMode: 'uitleggen', taskSubject: 'Wiskunde',
+    timerMode: 'pomo', timerSeconds: 1500, timerTotal: 1500, timerCustomSeconds: 1500,
+    timerRunning: false, timerEndsAt: null, timerSessionId: null, timerSubject: 'Wiskunde', timerTaskId: '',
     taskFilter: 'all', theme: 'light'
   };
 }
 
-const MODES = { pomo: 1500, short: 600, long: 3000 };
+const MODES = { pomo: 1500, short: 600, long: 3000, custom: 1500 };
 const asArray = value => Array.isArray(value) ? value : [];
 const asText = (value, max = 10000) => typeof value === 'string' ? value.slice(0, max) : '';
 const asNumber = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
@@ -85,7 +92,21 @@ function migrateV2ToV3(state) {
   };
 }
 
-const MIGRATIONS = { 1: migrateV1ToV2, 2: migrateV2ToV3 };
+function migrateV3ToV4(state) {
+  const subjects = Array.isArray(state.subjects) ? state.subjects : createDefaultState().subjects;
+  return {
+    ...state,
+    xpBase: Number.isFinite(Number(state.xpBase)) ? Number(state.xpBase) : Math.max(0, Number(state.xp) || 0),
+    xpEvents: Array.isArray(state.xpEvents) ? state.xpEvents : [],
+    subjects,
+    flashcards: Array.isArray(state.flashcards) ? state.flashcards : [],
+    studyPlan: Array.isArray(state.studyPlan) ? state.studyPlan : [],
+    timerCustomSeconds: Math.max(300, Math.min(10800, Number(state.timerCustomSeconds) || 1500)),
+    timerTaskId: typeof state.timerTaskId === 'string' ? state.timerTaskId : ''
+  };
+}
+
+const MIGRATIONS = { 1: migrateV1ToV2, 2: migrateV2ToV3, 3: migrateV3ToV4 };
 
 function migrateState(candidate) {
   let state = { ...candidate };
@@ -111,7 +132,7 @@ function migrateLegacyItem(item, type) {
     updated_at: item?.updated_at || createdAt,
     deleted: Boolean(item?.deleted),
     ...(type === 'task'
-      ? { title: asText(item?.title, 300), subject: asText(item?.subject, 80) || 'Algemeen', done: Boolean(item?.done), xpAwarded: Boolean(item?.xpAwarded) }
+      ? { title: asText(item?.title, 300), subject: asText(item?.subject, 80) || 'Algemeen', dueDate: /^\d{4}-\d{2}-\d{2}$/.test(item?.dueDate || '') ? item.dueDate : '', done: Boolean(item?.done), xpAwarded: Boolean(item?.xpAwarded) }
       : { title: asText(item?.title, 300), body: asText(item?.body) })
   };
 }
@@ -156,6 +177,8 @@ function normalizeStudyEvents(events) {
       weekKey,
       weekday: Math.max(0, Math.min(6, Math.floor(asNumber(event.weekday)))),
       minutes,
+      subject: asText(event.subject, 80),
+      taskId: asText(event.taskId, 80),
       label: asText(event.label, 300),
       updated_at: asText(event.updated_at, 40) || new Date().toISOString()
     };
@@ -176,6 +199,60 @@ function normalizeStudyBase(base, state) {
     weekKey: asText(base?.weekKey, 10) || state.weekKey,
     weekData
   };
+}
+
+function normalizeSubjects(subjects) {
+  const byId = new Map();
+  asArray(subjects).forEach(item => {
+    if (!item || typeof item !== 'object') return;
+    const name = asText(item.name, 80);
+    if (!name) return;
+    const id = asText(item.id, 80) || createId('subject');
+    byId.set(id, {
+      ...item,
+      id,
+      name,
+      color: /^#[0-9a-f]{6}$/i.test(item.color) ? item.color : '#6750A4',
+      goalMin: Math.max(5, Math.min(720, asNumber(item.goalMin, 60) || 60)),
+      examDate: /^\d{4}-\d{2}-\d{2}$/.test(item.examDate || '') ? item.examDate : '',
+      created_at: asText(item.created_at, 40) || new Date().toISOString(),
+      updated_at: asText(item.updated_at, 40) || new Date().toISOString(),
+      deleted: Boolean(item.deleted)
+    });
+  });
+  return [...byId.values()];
+}
+
+function normalizeFlashcards(cards) {
+  return asArray(cards).filter(item => item && typeof item === 'object').map(item => ({
+    ...item,
+    id: asText(item.id, 80) || createId('card'),
+    subjectId: asText(item.subjectId, 80),
+    front: asText(item.front, 1000),
+    back: asText(item.back, 3000),
+    dueDate: /^\d{4}-\d{2}-\d{2}$/.test(item.dueDate || '') ? item.dueDate : localDateKey(),
+    intervalDays: Math.max(0, asNumber(item.intervalDays)),
+    easeFactor: Math.max(1.3, Math.min(3.5, asNumber(item.easeFactor, 2.5))),
+    repetitions: Math.max(0, asNumber(item.repetitions)),
+    lapses: Math.max(0, asNumber(item.lapses)),
+    created_at: asText(item.created_at, 40) || new Date().toISOString(),
+    updated_at: asText(item.updated_at, 40) || new Date().toISOString(),
+    deleted: Boolean(item.deleted)
+  })).filter(item => item.front && item.back);
+}
+
+function normalizeStudyPlan(items) {
+  return asArray(items).filter(item => item && typeof item === 'object').map(item => ({
+    ...item,
+    id: asText(item.id, 80) || createId('plan'),
+    subjectId: asText(item.subjectId, 80),
+    date: /^\d{4}-\d{2}-\d{2}$/.test(item.date || '') ? item.date : localDateKey(),
+    label: asText(item.label, 300),
+    done: Boolean(item.done),
+    created_at: asText(item.created_at, 40) || new Date().toISOString(),
+    updated_at: asText(item.updated_at, 40) || new Date().toISOString(),
+    deleted: Boolean(item.deleted)
+  })).filter(item => item.label);
 }
 
 function recalculateStudyTotals(state) {
@@ -217,11 +294,12 @@ export function normalizeState(candidate) {
   next.theme = next.theme === 'dark' ? 'dark' : 'light';
   next.taskFilter = ['all', 'todo', 'done'].includes(next.taskFilter) ? next.taskFilter : 'all';
   next.timerMode = MODES[next.timerMode] ? next.timerMode : 'pomo';
-  next.timerTotal = MODES[next.timerMode];
+  next.timerCustomSeconds = Math.max(300, Math.min(10800, asNumber(next.timerCustomSeconds, 1500)));
+  next.timerTotal = next.timerMode === 'custom' ? next.timerCustomSeconds : MODES[next.timerMode];
   next.timerSeconds = Math.max(0, Math.min(next.timerTotal, asNumber(next.timerSeconds, next.timerTotal)));
   const hasTimerDeadline = Number.isFinite(Number(next.timerEndsAt)) && Number(next.timerEndsAt) > 0;
   next.timerRunning = Boolean(next.timerRunning && hasTimerDeadline && asText(next.timerSessionId, 160));
-  if (!next.timerRunning) { next.timerEndsAt = null; next.timerSessionId = null; }
+  if (!next.timerRunning) { next.timerEndsAt = null; next.timerSessionId = null; next.timerTaskId = ''; }
   next.tasks = asArray(next.tasks).map(item => migrateLegacyItem(item, 'task'));
   next.notes = asArray(next.notes).map(item => migrateLegacyItem(item, 'note'));
   next.tutorSubject = asText(next.tutorSubject, 80) || 'Wiskunde';
@@ -236,6 +314,31 @@ export function normalizeState(candidate) {
     updated_at: item?.updated_at || new Date().toISOString()
   })).slice(-150);
   next.sessionLog = asArray(next.sessionLog).map(migrateSession).slice(0, 50);
+  next.subjects = normalizeSubjects(next.subjects);
+  next.taskSubject = asText(next.taskSubject, 80) || 'Wiskunde';
+  next.flashcards = normalizeFlashcards(next.flashcards);
+  next.studyPlan = normalizeStudyPlan(next.studyPlan);
+  const knownSubjects = new Set(next.subjects.map(subject => subject.name.toLocaleLowerCase('nl')));
+  const referencedSubjects = [
+    ...next.tasks.map(item => item.subject),
+    ...next.sessionLog.map(item => item.label.split(' · ')[0])
+  ];
+  referencedSubjects.forEach(name => {
+    const cleanName = asText(name, 80);
+    if (!cleanName || knownSubjects.has(cleanName.toLocaleLowerCase('nl'))) return;
+    const id = `subject-${cleanName.toLocaleLowerCase('nl').replace(/[^a-z0-9]+/g, '-')}`;
+    next.subjects.push({
+      id,
+      name: cleanName,
+      color: '#6750A4',
+      goalMin: 60,
+      examDate: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      deleted: false
+    });
+    knownSubjects.add(cleanName.toLocaleLowerCase('nl'));
+  });
   rolloverDailyState(next);
   return next;
 }

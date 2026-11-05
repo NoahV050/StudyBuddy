@@ -18,6 +18,7 @@ export function renderTimer(state) {
   byId('timer-mode-lbl').textContent = MODES[state.timerMode].label;
   byId('timer-arc').style.strokeDashoffset = 515 * (1 - state.timerSeconds / state.timerTotal);
   byId('btn-start').textContent = state.timerRunning ? 'Pauzeer' : state.timerSeconds === state.timerTotal ? 'Start' : 'Hervat';
+  byId('custom-focus-minutes').value = state.timerCustomSeconds / 60;
   Object.keys(MODES).forEach(mode => {
     const button = byId(`mode-${mode}`);
     if (!button) return;
@@ -44,6 +45,12 @@ export function renderTasks(state, toggleTask, deleteTask) {
     const title = document.createElement('div');
     title.className = `task-text${task.done ? ' done' : ''}`;
     title.textContent = task.title;
+    if (task.dueDate) {
+      const deadline = document.createElement('span');
+      deadline.className = 'task-due-date';
+      deadline.textContent = `Deadline ${task.dueDate}`;
+      title.append(deadline);
+    }
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'icon-button';
@@ -203,7 +210,9 @@ export function renderSessionLog(state) {
   }
   state.sessionLog.forEach(session => {
     const item = document.createElement('div');
-    item.textContent = session.label;
+    const event = state.studyEvents.find(studyEvent => studyEvent.id === session.id);
+    const task = state.tasks.find(candidate => candidate.id === event?.taskId);
+    item.textContent = `${session.label}${task ? ` · ${task.title}` : ''}`;
     element.append(item);
   });
 }

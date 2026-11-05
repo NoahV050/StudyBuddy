@@ -3,9 +3,11 @@ import { loadState, saveState } from './modules/storage.js';
 import { addTask as createTask, deleteTask as removeTask, toggleTask as changeTask } from './modules/tasks.js';
 import { saveNote as persistNote } from './modules/notes.js';
 import { awardXp } from './modules/gamification.js';
-import { completeTimer, pauseTimer, reconcileTimer, resetTimer as resetTimerState, setMode as setTimerMode, startTimer } from './modules/timer.js';
+import { completeTimer, pauseTimer, reconcileTimer, resetTimer as resetTimerState, setCustomDuration, setMode as setTimerMode, startTimer } from './modules/timer.js';
 import { addChatMessage, askTutor, clearSubjectHistory } from './modules/tutor.js';
 import { createAuthService } from './modules/auth.js';
+import { addFlashcard, addSubject, completePlanItem, createExamPlan, reviewFlashcard } from './modules/learning.js';
+import { renderLearning as renderLearningView } from './modules/learning-ui.js';
 import {
   addBubble,
   byId,
@@ -23,6 +25,8 @@ import {
 let state = loadState(null) || createDefaultState();
 let sync = { mode: 'guest', message: 'Je gegevens staan alleen op dit apparaat.', user: null };
 let auth, editingNoteId = null, chatAbortController = null;
+let learningSubjectId = state.subjects?.find(subject => !subject.deleted)?.id || '';
+let flashcardRevealed = false;
 const $ = byId;
 const save = () => { rolloverDailyState(state); touch(state); saveState(sync.user, state); auth?.scheduleSave(); };
 function toast(message) { const element = $('toast'); element.textContent = message; element.classList.add('show'); setTimeout(() => element.classList.remove('show'), 2200); }
@@ -35,18 +39,70 @@ const renderChat = () => renderChatView(state, $('ai-subject').value, $('tutor-h
 const renderHome = () => renderHomeView(state);
 const renderProfile = () => renderProfileView(state, sync);
 const renderAuth = () => renderAuthView(sync);
-function showPage(name, showTabs = true) { document.querySelectorAll('.page').forEach(page => page.classList.toggle('active', page.id === `pg-${name}`)); document.querySelectorAll('.tab-item').forEach(tab => tab.classList.toggle('active', tab.id === `tab-${name}`)); $('tab-bar').style.display = showTabs && sync.user && state.profileComplete ? 'flex' : 'none'; if (name === 'notes') renderNotes(); if (name === 'ai') renderChat(); if (name === 'profile') renderProfile(); if (name === 'home') renderHome(); }
+const renderLearning = () => renderLearningView(state, learningSubjectId, flashcardRevealed);
+function showPage(name, showTabs = true) { document.querySelectorAll('.page').forEach(page => page.classList.toggle('active', page.id === `pg-${name}`)); document.querySelectorAll('.tab-item').forEach(tab => tab.classList.toggle('active', tab.id === `tab-${name}`)); $('tab-bar').style.display = showTabs && sync.user && state.profileComplete ? 'flex' : 'none'; if (name === 'notes') renderNotes(); if (name === 'ai') renderChat(); if (name === 'learn') renderLearning(); if (name === 'profile') renderProfile(); if (name === 'home') renderHome(); }
 function ensureShell() { if (!sync.user) return showPage('auth-landing', false); if (!state.profileComplete) return showPage('profile-setup', false); if (!$('pg-home').classList.contains('active')) showPage('home'); }
-function renderAll() { document.documentElement.dataset.theme = state.theme; renderTimer(); renderTasks(); renderNotes(); renderChat(); renderHome(); renderProfile(); ensureShell(); }
-function completeCurrentTimer(sessionId) { const result = completeTimer(state, sessionId); if (!result.completed) return; awardXp(state, result.minutes * 2, `timer:${sessionId}`); save(); renderAll(); $('session-complete-msg').textContent = `Je hebt ${result.subject} gestudeerd voor ${result.minutes} minuten. +${result.minutes * 2} XP!`; $('session-modal').style.display = 'flex'; }
-function tickTimer() { const result = reconcileTimer(state); renderTimer(); if (result.completed) completeCurrentTimer(result.sessionId); }
+function renderAll() { document.documentElement.dataset.theme = state.theme; renderTimer(); renderTasks(); renderNotes(); renderChat(); renderHome(); renderProfile(); renderLearning(); ensureShell(); }
+function completeCurrentTimer(sessionId, taskId) { const result = completeTimer(state, sessionId, new Date(), taskId); if (!result.completed) return; awardXp(state, result.minutes * 2, `timer:${sessionId}`); save(); renderAll(); $('session-complete-msg').textContent = `Je hebt ${result.subject} gestudeerd voor ${result.minutes} minuten. +${result.minutes * 2} XP!`; $('session-modal').style.display = 'flex'; if ('Notification' in window && Notification.permission === 'granted') new Notification('Focussessie afgerond', { body: `${result.minutes} minuten ${result.subject}. Goed gewerkt!` }); }
+function tickTimer() { const result = reconcileTimer(state); renderTimer(); if (result.completed) completeCurrentTimer(result.sessionId, result.taskId); }
 function setMode(mode) { if (setTimerMode(state, mode)) { save(); renderTimer(); } }
-function toggleTimer() { if (state.timerRunning) pauseTimer(state); else startTimer(state, $('focus-subject').value); save(); renderTimer(); }
+function setCustomFocusDuration() { if (setCustomDuration(state, $('custom-focus-minutes').value)) { save(); renderTimer(); toast(`Timer ingesteld op ${state.timerCustomSeconds / 60} minuten.`); } }
+function enableTimerNotifications() { if (!('Notification' in window)) return toast('Deze browser ondersteunt geen meldingen.'); Notification.requestPermission().then(permission => { $('timer-notification-btn').textContent = permission === 'granted' ? 'Meldingen staan aan' : 'Meldingen niet toegestaan'; }).catch(() => toast('Meldingen konden niet worden ingeschakeld.')); }
+function toggleTimer() { if (state.timerRunning) pauseTimer(state); else startTimer(state, $('focus-subject').value, $('focus-task').value); save(); renderTimer(); }
 function resetTimer() { resetTimerState(state); save(); renderTimer(); }
 function filterTasks(filter) { state.taskFilter = ['all', 'todo', 'done'].includes(filter) ? filter : 'all'; save(); ['all', 'todo', 'done'].forEach(name => { const button = $(`filter-${name}`); button.style.fontWeight = name === state.taskFilter ? '600' : '400'; }); renderTasks(); }
-function addTask() { const input = $('new-task-input'); const task = createTask(state, input.value); if (!task) return; input.value = ''; awardXp(state, 10, `task:create:${task.id}`); save(); renderTasks(); renderHome(); toast('+10 XP verdiend!'); }
-function toggleTask(id) { const { item, award } = changeTask(state, id); if (award) awardXp(state, award, `task:complete:${item.id}`); save(); renderTasks(); renderHome(); if (award) toast('+20 XP verdiend!'); }
-function deleteTask(id) { if (removeTask(state, id)) { save(); renderTasks(); renderHome(); } }
+function addTask() { const input = $('new-task-input'); const subject = $('task-subject').value || 'Algemeen'; state.taskSubject = subject; const task = createTask(state, input.value, subject, $('task-due-date').value); if (!task) return; input.value = ''; $('task-due-date').value = ''; awardXp(state, 10, `task:create:${task.id}`); save(); renderTasks(); renderHome(); renderLearning(); toast('+10 XP verdiend!'); }
+function toggleTask(id) { const { item, award } = changeTask(state, id); if (award) awardXp(state, award, `task:complete:${item.id}`); save(); renderTasks(); renderHome(); renderLearning(); if (award) toast('+20 XP verdiend!'); }
+function deleteTask(id) { if (removeTask(state, id)) { save(); renderTasks(); renderHome(); renderLearning(); } }
+function selectLearningSubject(value) { const subject = state.subjects.find(item => item.id === value || item.name === value); if (!subject) return; learningSubjectId = subject.id; flashcardRevealed = false; renderLearning(); }
+function selectTutorSubject(subject) { state.tutorSubject = subject; save(); }
+function selectTutorMode(mode) { state.tutorMode = mode; save(); }
+function addSubjectFromForm() {
+  const input = $('new-subject-name');
+  const subject = addSubject(state, input.value, { color: $('new-subject-color').value, goalMin: $('new-subject-goal').value });
+  if (!subject) return toast('Vul eerst een vaknaam in.');
+  learningSubjectId = subject.id;
+  input.value = '';
+  save();
+  renderLearning();
+  toast(`Vak ${subject.name} toegevoegd.`);
+}
+function addFlashcardFromForm() {
+  const card = addFlashcard(state, learningSubjectId, $('flashcard-question').value, $('flashcard-answer-input').value);
+  if (!card) return toast('Vul een vraag en antwoord in.');
+  $('flashcard-question').value = '';
+  $('flashcard-answer-input').value = '';
+  flashcardRevealed = false;
+  save();
+  renderLearning();
+  toast('Herhaalkaartje toegevoegd.');
+}
+function revealFlashcard() { flashcardRevealed = true; renderLearning(); }
+function rateFlashcard(quality) {
+  const cardId = $('flashcard-front').dataset.cardId;
+  const card = reviewFlashcard(state, cardId, quality);
+  if (!card) return;
+  awardXp(state, 2, `review:${card.id}:${localDateKey()}`);
+  flashcardRevealed = false;
+  save();
+  renderLearning();
+}
+function createExamPlanFromForm() {
+  const subjectId = learningSubjectId;
+  const plan = createExamPlan(state, subjectId, $('exam-date').value, $('exam-topics').value);
+  if (!plan.length) return toast('Kies een toetsdatum tussen morgen en een jaar vanaf nu.');
+  $('exam-topics').value = '';
+  save();
+  renderLearning();
+  toast(`Je studieschema met ${plan.length} sessies staat klaar.`);
+}
+function completePlannedItem(id) {
+  if (!completePlanItem(state, id)) return;
+  awardXp(state, 5, `plan:done:${id}`);
+  save();
+  renderLearning();
+  toast('+5 XP verdiend!');
+}
 function openNoteEditor(id) { editingNoteId = id === -1 ? null : id; const note = state.notes.find(item => item.id === editingNoteId); $('note-title-input').value = note?.title || ''; $('note-body-input').value = note?.body || ''; $('notes-list-view').style.display = 'none'; $('notes-editor-view').style.display = 'flex'; $('note-title-input').focus(); }
 function closeNoteEditor() { editingNoteId = null; $('notes-list-view').style.display = 'block'; $('notes-editor-view').style.display = 'none'; }
 function saveNote() { const result = persistNote(state, editingNoteId, $('note-title-input').value, $('note-body-input').value); if (result.isNew) awardXp(state, 5, `note:create:${result.item.id}`); save(); closeNoteEditor(); renderNotes(); renderProfile(); if (result.isNew) toast('+5 XP verdiend!'); }
@@ -138,7 +194,7 @@ function closeAuthModal() { $('auth-modal').style.display = 'none'; $('auth-moda
 async function submitAuth() { const email = $('auth-email-input').value.trim(); const password = $('auth-password-input').value; if (!email || password.length < 6) return $('auth-modal-status').textContent = 'Vul een e-mailadres en een wachtwoord van minimaal 6 tekens in.'; try { const signedIn = authMode === 'signin' ? (await auth.signIn(email, password), true) : await auth.signUp(email, password); if (signedIn) closeAuthModal(); else $('auth-modal-status').textContent = 'Controleer je e-mail om je account te bevestigen.'; } catch (error) { $('auth-modal-status').textContent = error.message || 'Inloggen is mislukt.'; } }
 async function logoutUser() { try { await auth.signOut(); toast('Uitgelogd'); } catch { toast('Uitloggen is niet gelukt.'); } }
 function closeSessionModal() { $('session-modal').style.display = 'none'; }
-Object.assign(window, { goTo: name => showPage(name), setTheme, setMode, toggleTimer, resetTimer, filterTasks, addTask, toggleTask, deleteTask, openNoteEditor, closeNoteEditor, saveNote, sendMessage, sendChip, stopTutor, regenerateTutor, saveTutorAsNote, clearTutorHistory, searchTutorHistory, finishOnboard, editProfile, showAuthModal, closeAuthModal, submitAuth, logoutUser, closeSessionModal });
+Object.assign(window, { goTo: name => showPage(name), setTheme, setMode, setCustomFocusDuration, enableTimerNotifications, toggleTimer, resetTimer, filterTasks, addTask, toggleTask, deleteTask, openNoteEditor, closeNoteEditor, saveNote, sendMessage, sendChip, stopTutor, regenerateTutor, saveTutorAsNote, clearTutorHistory, searchTutorHistory, selectLearningSubject, selectTutorSubject, selectTutorMode, addSubjectFromForm, addFlashcardFromForm, revealFlashcard, rateFlashcard, createExamPlanFromForm, completePlannedItem, finishOnboard, editProfile, showAuthModal, closeAuthModal, submitAuth, logoutUser, closeSessionModal });
 auth = createAuthService({ config: window.STUDY_BUDDY_CONFIG, getState: () => state, loadLocal: loadState, saveLocal: saveState, guestState: () => loadState(null) || createDefaultState(), onState: update => { if (update.state) state = normalizeState(update.state); sync = { ...sync, ...update }; renderAll(); } });
 setInterval(tickTimer, 1000); document.addEventListener('visibilitychange', () => { if (!document.hidden) tickTimer(); }); window.addEventListener('beforeunload', () => saveState(sync.user, state));
 renderAll(); auth.init().catch(() => { sync = { ...sync, mode: 'error', message: 'Aanmelden bij synchronisatie is mislukt.' }; renderAuth(); });

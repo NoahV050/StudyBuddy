@@ -28,7 +28,7 @@ test('migrates existing version 2 progress without dropping user content', () =>
     notes: [{ id: 'note-1', title: 'Biologie', body: 'Celstructuur' }]
   });
 
-  assert.equal(STATE_VERSION, 3);
+  assert.equal(STATE_VERSION, 4);
   assert.equal(migrated.version, STATE_VERSION);
   assert.equal(migrated.name, 'Sam');
   assert.equal(migrated.xp, 240);

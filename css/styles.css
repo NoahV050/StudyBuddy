@@ -1,4 +1,5 @@
 *{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
 :root{
   --purple:#534AB7;--purple-light:#EEEDFE;--purple-dark:#3C3489;
   --teal:#1D9E75;--teal-light:#E1F5EE;
@@ -180,6 +181,26 @@ select,input,textarea{color:var(--color-text-primary)}
 .tutor-actions,.tutor-history-controls{display:flex;flex-wrap:wrap;gap:6px;padding:4px 12px}
 .tutor-history-controls input{width:100%;padding:9px 12px;border:1px solid var(--color-border-secondary);border-radius:8px;background:var(--color-background-secondary)}
 .tutor-actions .btn:disabled{opacity:.55;cursor:not-allowed}
+.learning-section{margin:8px 0}
+.learning-section h2{margin-bottom:10px}
+.learning-section label,.learning-form label{display:block;font-size:12px;font-weight:600;margin:8px 0 4px}
+.learning-section input,.learning-section textarea,.learning-select{width:100%;padding:10px 12px;border:1px solid var(--color-border-secondary);border-radius:8px;background:var(--color-background-secondary);font:inherit}
+.learning-section textarea{resize:vertical}
+.subjects-list,.learning-list{display:flex;flex-direction:column;gap:8px}
+.subject-row,.learning-stat{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--color-border-tertiary)}
+.subject-info{display:flex;flex-direction:column;gap:2px;min-width:0}
+.subject-info span,.learning-stat{font-size:12px;color:var(--color-text-secondary)}
+.subject-swatch{width:12px;height:36px;border-radius:6px;flex-shrink:0}
+.learning-stat{justify-content:space-between}
+.learning-stat strong{color:var(--color-text-primary)}
+.flashcard{display:flex;flex-direction:column;gap:10px;padding:12px;margin:12px 0;background:var(--color-background-secondary);border-radius:10px}
+.flashcard-face{min-height:44px;white-space:pre-wrap;overflow-wrap:anywhere}
+.flashcard-answer{border-top:1px solid var(--color-border-tertiary);padding-top:10px}
+.flashcard-actions{display:flex;flex-wrap:wrap;gap:6px}
+.learning-form{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.timer-settings{width:100%;margin-bottom:14px}
+.timer-settings label{display:block;font-size:12px;font-weight:600;margin:8px 0 4px}
+.timer-settings input,.timer-settings select{min-width:0;padding:9px 10px;border:1px solid var(--color-border-secondary);border-radius:8px;background:var(--color-background-secondary);font:inherit;color:var(--color-text-primary)}
 .chat-input-row{display:flex;gap:8px;padding:10px 12px;border-top:0.5px solid var(--color-border-tertiary)}
 .chat-input-row input{flex:1;font-family:inherit;font-size:14px;padding:10px 14px;border-radius:20px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);outline:none}
 .send-btn{width:36px;height:36px;border-radius:50%;background:var(--purple);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -194,6 +215,7 @@ select,input,textarea{color:var(--color-text-primary)}
 .task-check.done::after{content:'';display:block;width:12px;height:8px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
 .task-text{flex:1;font-size:14px}
 .task-text.done{text-decoration:line-through;color:var(--color-text-secondary)}
+.task-due-date{display:block;font-size:11px;color:var(--color-text-secondary);text-decoration:none}
 .add-task-row{display:flex;gap:8px;margin-top:10px}
 .add-task-row input{flex:1;font-size:14px;padding:10px 12px;border-radius:10px;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-primary);font-family:inherit;outline:none}
 .note-card{background:var(--color-background-secondary);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer}

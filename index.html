@@ -121,6 +121,16 @@
           <button class="btn btn-sm" id="mode-short" onclick="setMode('short')" style="flex:1">Kort 10m</button>
           <button class="btn btn-sm" id="mode-long" onclick="setMode('long')" style="flex:1">Diep 50m</button>
         </div>
+        <div class="timer-settings">
+          <label for="custom-focus-minutes">Eigen sessie (5–180 min)</label>
+          <div class="add-task-row">
+            <input id="custom-focus-minutes" type="number" min="5" max="180" value="25">
+            <button class="btn btn-sm" type="button" onclick="setCustomFocusDuration()">Instellen</button>
+          </div>
+          <label for="focus-task">Koppel aan een taak (optioneel)</label>
+          <select id="focus-task" class="learning-select"></select>
+          <button class="btn btn-sm" type="button" id="timer-notification-btn" onclick="enableTimerNotifications()">Meldingen toestaan</button>
+        </div>
         <div class="timer-ring">
           <svg width="180" height="180" viewBox="0 0 180 180">
             <circle class="timer-ring-bg" cx="90" cy="90" r="82"/>
@@ -150,10 +160,10 @@
       <div class="page" id="pg-ai" style="padding:0">
         <div style="padding:14px 14px 8px">
           <div class="page-title">AI-tutor</div>
-          <select id="ai-subject" style="width:100%;padding:8px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);margin-bottom:10px">
+          <select id="ai-subject" onchange="selectTutorSubject(this.value)" style="width:100%;padding:8px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);margin-bottom:10px">
             <option>Wiskunde</option><option>Natuurkunde</option><option>Geschiedenis</option><option>Nederlands</option><option>Anders</option>
           </select>
-          <select id="ai-mode" aria-label="Tutormodus" style="width:100%;padding:8px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary)">
+          <select id="ai-mode" onchange="selectTutorMode(this.value)" aria-label="Tutormodus" style="width:100%;padding:8px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary)">
             <option value="uitleggen">Uitleggen</option><option value="overhoren">Overhoren</option><option value="samenvatten">Samenvatten</option><option value="huiswerk">Huiswerkhulp</option><option value="examen">Examenmodus</option>
           </select>
         </div>
@@ -192,11 +202,85 @@
         </div>
         <div class="card" style="flex:1">
           <div id="task-list"></div>
+          <label class="sr-only" for="task-subject">Vak voor deze taak</label>
+          <select id="task-subject" class="learning-select" aria-label="Vak voor deze taak"></select>
+          <label for="task-due-date">Deadline (optioneel)</label>
+          <input id="task-due-date" type="date" class="learning-select">
           <div class="add-task-row">
-            <input id="new-task-input" placeholder="Voeg een taak toe..." onkeydown="if(event.key==='Enter')addTask()">
+            <input id="new-task-input" maxlength="300" placeholder="Voeg een taak toe..." onkeydown="if(event.key==='Enter')addTask()">
             <button class="btn btn-sm" onclick="addTask()">+</button>
           </div>
         </div>
+      </div>
+
+      <div class="page" id="pg-learn">
+        <div class="page-title">Leren</div>
+        <div class="page-sub">Vakken, herhaalkaartjes en je planning op één plek.</div>
+        <section class="card learning-section">
+          <h2 class="sec-hdr">Je vakken</h2>
+          <div id="subjects-list" class="subjects-list"></div>
+          <div class="learning-form">
+            <label for="new-subject-name">Nieuw vak</label>
+            <div class="add-task-row">
+              <input id="new-subject-name" maxlength="80" placeholder="Bijv. Engels">
+              <button class="btn btn-sm" type="button" onclick="addSubjectFromForm()">Toevoegen</button>
+            </div>
+            <label for="new-subject-color">Vak kleur</label>
+            <input id="new-subject-color" type="color" value="#6750A4">
+            <label for="new-subject-goal">Dagdoel in minuten</label>
+            <input id="new-subject-goal" type="number" min="5" max="720" value="60">
+          </div>
+        </section>
+
+        <section class="card learning-section">
+          <h2 class="sec-hdr">Herhaalkaartjes</h2>
+          <label for="learn-subject-select">Vak</label>
+          <select id="learn-subject-select" class="learning-select" onchange="selectLearningSubject(this.value)"></select>
+          <div class="flashcard" aria-live="polite">
+            <div id="flashcard-due-count" class="metric-label">0 klaar om te herhalen</div>
+            <div id="flashcard-front" class="flashcard-face"></div>
+            <div id="flashcard-back" class="flashcard-face flashcard-answer" hidden></div>
+            <button id="flashcard-reveal" class="btn btn-sm" type="button" onclick="revealFlashcard()">Toon antwoord</button>
+            <div id="flashcard-actions" class="flashcard-actions" hidden>
+              <button class="btn btn-sm" type="button" onclick="rateFlashcard(0)">Opnieuw</button>
+              <button class="btn btn-sm" type="button" onclick="rateFlashcard(3)">Lastig</button>
+              <button class="btn btn-sm btn-primary" type="button" onclick="rateFlashcard(4)">Goed</button>
+              <button class="btn btn-sm" type="button" onclick="rateFlashcard(5)">Makkelijk</button>
+            </div>
+          </div>
+          <div class="learning-form">
+            <label for="flashcard-question">Nieuw kaartje — vraag</label>
+            <input id="flashcard-question" maxlength="1000" placeholder="Wat wil je onthouden?">
+            <label for="flashcard-answer-input">Antwoord</label>
+            <textarea id="flashcard-answer-input" maxlength="3000" rows="3" placeholder="Schrijf het antwoord"></textarea>
+            <button class="btn btn-primary btn-full" type="button" onclick="addFlashcardFromForm()">Kaartje toevoegen</button>
+          </div>
+        </section>
+
+        <section class="card learning-section">
+          <h2 class="sec-hdr">Toets plannen</h2>
+          <label for="exam-date">Toetsdatum</label>
+          <input id="exam-date" type="date">
+          <label for="exam-topics">Onderwerpen, één per regel</label>
+          <textarea id="exam-topics" maxlength="3000" rows="3" placeholder="Bijv. hoofdstuk 1&#10;Vergelijkingen"></textarea>
+          <button class="btn btn-primary btn-full" type="button" onclick="createExamPlanFromForm()">Maak mijn studieschema</button>
+        </section>
+
+        <section class="card learning-section">
+          <h2 class="sec-hdr">Voor vandaag</h2>
+          <div id="today-plan-list" class="learning-list"></div>
+        </section>
+
+        <section class="card learning-section">
+          <h2 class="sec-hdr">Komende studiesessies</h2>
+          <div id="study-schedule-list" class="learning-list"></div>
+        </section>
+
+        <section class="card learning-section">
+          <h2 class="sec-hdr">Studietijd deze week</h2>
+          <strong id="learning-week-total">0u 0m deze week</strong>
+          <div id="subject-stats" class="learning-list"></div>
+        </section>
       </div>
 
       <div class="page" id="pg-notes">
@@ -269,6 +353,10 @@
         <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M9.2 17.6 4.8 13.2l1.7-1.7 2.7 2.7 8.3-8.3 1.7 1.7zM4 5h11v2H4zm0 12h7v2H4z"/></svg></div>
         <div class="tab-label">Taken</div>
       </div>
+      <div class="tab-item" id="tab-learn" onclick="goTo('learn')">
+        <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5zm2.5-.5a.5.5 0 0 0 0 1H17V4zM6.5 17H17V7H6.5a2.5 2.5 0 0 1-1-.2v10.4c.3-.1.7-.2 1-.2"/></svg></div>
+        <div class="tab-label">Leren</div>
+      </div>
       <div class="tab-item" id="tab-notes" onclick="goTo('notes')">
         <div class="tab-icon"><svg viewBox="0 0 24 24"><path d="M6 3.5h9.5L20 8v12a.5.5 0 0 1-.5.5h-13A.5.5 0 0 1 6 20zM14.5 4.9V9H18z"/></svg></div>
         <div class="tab-label">Notities</div>
@@ -318,7 +406,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
-  <script type="module" src="js/script.js?version=5"></script>
+  <script type="module" src="js/script.js?version=10"></script>
   <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');</script>
 </body>
 </html>

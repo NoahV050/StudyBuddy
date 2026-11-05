@@ -1,9 +1,9 @@
 import { createId, touch } from './state.js';
 const now = () => new Date().toISOString();
 
-export function addTask(state, title, subject = 'Algemeen') {
+export function addTask(state, title, subject = 'Algemeen', dueDate = '') {
   const clean = String(title || '').trim().slice(0, 300); if (!clean) return null;
-  const item = { id: createId('task'), title: clean, subject, done: false, xpAwarded: false, deleted: false, created_at: now(), updated_at: now() };
+  const item = { id: createId('task'), title: clean, subject, dueDate: /^\d{4}-\d{2}-\d{2}$/.test(dueDate) ? dueDate : '', done: false, xpAwarded: false, deleted: false, created_at: now(), updated_at: now() };
   state.tasks.unshift(item); touch(state); return item;
 }
 
