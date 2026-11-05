@@ -281,6 +281,11 @@
           <strong id="learning-week-total">0u 0m deze week</strong>
           <div id="subject-stats" class="learning-list"></div>
         </section>
+        <section class="card learning-section">
+          <h2 class="sec-hdr">Kleine doelen</h2>
+          <p class="challenge-intro">Kies een haalbaar doel. Je XP is een extraatje, geen verplichting.</p>
+          <div id="challenge-list" class="challenge-list"></div>
+        </section>
       </div>
 
       <div class="page" id="pg-notes">
@@ -309,6 +314,12 @@
           </div>
         </div>
         <button class="btn btn-full" onclick="editProfile()" style="margin-bottom:12px">Profiel bewerken</button>
+        <section class="card streak-freeze-card" aria-labelledby="streak-freeze-title">
+          <h2 id="streak-freeze-title" class="sec-hdr">Reeks-vriezer</h2>
+          <p id="streak-freeze-count"></p>
+          <p id="streak-freeze-hint" class="challenge-intro"></p>
+          <button id="streak-freeze-btn" class="btn btn-sm" type="button" onclick="useStreakFreezeFromProfile()">Gebruik reeks-vriezer</button>
+        </section>
         <div class="card" style="margin-bottom:12px">
           <div style="display:flex;justify-content:space-between">
             <span style="font-size:13px;font-weight:500">XP naar volgende niveau</span>
@@ -406,7 +417,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
-  <script type="module" src="js/script.js?version=10"></script>
+  <script type="module" src="js/script.js?version=11"></script>
   <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');</script>
 </body>
 </html>

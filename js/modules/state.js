@@ -1,4 +1,4 @@
-export const STATE_VERSION = 4;
+export const STATE_VERSION = 5;
 
 export function localDateKey(date = new Date()) {
   const year = date.getFullYear();
@@ -33,6 +33,7 @@ export function createDefaultState() {
     updated_at: now.toISOString(),
     name: 'Student', age: '', studyLevel: 'Middelbare school', profileComplete: false,
     xp: 0, xpBase: 0, xpEvents: [], level: 0, streak: 0, lastStudyDate: null,
+    streakFreezeCount: 1, streakFreezeUsedAt: '',
     dailyGoalMin: 120, studiedMin: 0, sessionsToday: 0, dayKey,
     weekData: [0, 0, 0, 0, 0, 0, 0], weekKey,
     studyBase: { dayKey, studiedMin: 0, sessionsToday: 0, weekKey, weekData: [0, 0, 0, 0, 0, 0, 0] },
@@ -106,7 +107,17 @@ function migrateV3ToV4(state) {
   };
 }
 
-const MIGRATIONS = { 1: migrateV1ToV2, 2: migrateV2ToV3, 3: migrateV3ToV4 };
+function migrateV4ToV5(state) {
+  return {
+    ...state,
+    streakFreezeCount: Number.isFinite(Number(state.streakFreezeCount))
+      ? Math.max(0, Math.floor(Number(state.streakFreezeCount)))
+      : 1,
+    streakFreezeUsedAt: asText(state.streakFreezeUsedAt, 40)
+  };
+}
+
+const MIGRATIONS = { 1: migrateV1ToV2, 2: migrateV2ToV3, 3: migrateV3ToV4, 4: migrateV4ToV5 };
 
 function migrateState(candidate) {
   let state = { ...candidate };
@@ -132,7 +143,7 @@ function migrateLegacyItem(item, type) {
     updated_at: item?.updated_at || createdAt,
     deleted: Boolean(item?.deleted),
     ...(type === 'task'
-      ? { title: asText(item?.title, 300), subject: asText(item?.subject, 80) || 'Algemeen', dueDate: /^\d{4}-\d{2}-\d{2}$/.test(item?.dueDate || '') ? item.dueDate : '', done: Boolean(item?.done), xpAwarded: Boolean(item?.xpAwarded) }
+      ? { title: asText(item?.title, 300), subject: asText(item?.subject, 80) || 'Algemeen', dueDate: /^\d{4}-\d{2}-\d{2}$/.test(item?.dueDate || '') ? item.dueDate : '', done: Boolean(item?.done), completed_at: asText(item?.completed_at, 40), xpAwarded: Boolean(item?.xpAwarded) }
       : { title: asText(item?.title, 300), body: asText(item?.body) })
   };
 }
@@ -237,6 +248,7 @@ function normalizeFlashcards(cards) {
     lapses: Math.max(0, asNumber(item.lapses)),
     created_at: asText(item.created_at, 40) || new Date().toISOString(),
     updated_at: asText(item.updated_at, 40) || new Date().toISOString(),
+    lastReviewedAt: asText(item.lastReviewedAt, 40),
     deleted: Boolean(item.deleted)
   })).filter(item => item.front && item.back);
 }
@@ -281,6 +293,8 @@ export function normalizeState(candidate) {
   next.xp = next.xpBase + next.xpEvents.reduce((total, event) => total + event.amount, 0);
   next.level = getLevel(next.xp);
   next.streak = Math.max(0, asNumber(next.streak));
+  next.streakFreezeCount = Math.max(0, Math.floor(asNumber(next.streakFreezeCount, 1)));
+  next.streakFreezeUsedAt = asText(next.streakFreezeUsedAt, 40);
   next.dailyGoalMin = Math.max(5, Math.min(720, asNumber(next.dailyGoalMin, 120) || 120));
   next.dayKey = asText(next.dayKey, 10) || localDateKey();
   next.weekKey = asText(next.weekKey, 10) || localWeekKey();

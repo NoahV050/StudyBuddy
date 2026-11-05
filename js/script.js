@@ -8,6 +8,7 @@ import { addChatMessage, askTutor, clearSubjectHistory } from './modules/tutor.j
 import { createAuthService } from './modules/auth.js';
 import { addFlashcard, addSubject, completePlanItem, createExamPlan, reviewFlashcard } from './modules/learning.js';
 import { renderLearning as renderLearningView } from './modules/learning-ui.js';
+import { claimChallenge, useStreakFreeze } from './modules/challenges.js';
 import {
   addBubble,
   byId,
@@ -103,6 +104,22 @@ function completePlannedItem(id) {
   renderLearning();
   toast('+5 XP verdiend!');
 }
+function claimLearningChallenge(period, id) {
+  if (!claimChallenge(state, period, id)) return toast('Dit doel is nog niet afgerond.');
+  save();
+  renderLearning();
+  renderHome();
+  renderProfile();
+  const reward = period === 'daily' ? 10 : 25;
+  toast(`+${reward} XP verdiend. Goed gedaan!`);
+}
+function useStreakFreezeFromProfile() {
+  if (!useStreakFreeze(state)) return toast('Je kunt de reeks-vriezer nu niet gebruiken.');
+  save();
+  renderHome();
+  renderProfile();
+  toast('Je reeks is beschermd. De reeks-vriezer is gebruikt.');
+}
 function openNoteEditor(id) { editingNoteId = id === -1 ? null : id; const note = state.notes.find(item => item.id === editingNoteId); $('note-title-input').value = note?.title || ''; $('note-body-input').value = note?.body || ''; $('notes-list-view').style.display = 'none'; $('notes-editor-view').style.display = 'flex'; $('note-title-input').focus(); }
 function closeNoteEditor() { editingNoteId = null; $('notes-list-view').style.display = 'block'; $('notes-editor-view').style.display = 'none'; }
 function saveNote() { const result = persistNote(state, editingNoteId, $('note-title-input').value, $('note-body-input').value); if (result.isNew) awardXp(state, 5, `note:create:${result.item.id}`); save(); closeNoteEditor(); renderNotes(); renderProfile(); if (result.isNew) toast('+5 XP verdiend!'); }
@@ -194,7 +211,7 @@ function closeAuthModal() { $('auth-modal').style.display = 'none'; $('auth-moda
 async function submitAuth() { const email = $('auth-email-input').value.trim(); const password = $('auth-password-input').value; if (!email || password.length < 6) return $('auth-modal-status').textContent = 'Vul een e-mailadres en een wachtwoord van minimaal 6 tekens in.'; try { const signedIn = authMode === 'signin' ? (await auth.signIn(email, password), true) : await auth.signUp(email, password); if (signedIn) closeAuthModal(); else $('auth-modal-status').textContent = 'Controleer je e-mail om je account te bevestigen.'; } catch (error) { $('auth-modal-status').textContent = error.message || 'Inloggen is mislukt.'; } }
 async function logoutUser() { try { await auth.signOut(); toast('Uitgelogd'); } catch { toast('Uitloggen is niet gelukt.'); } }
 function closeSessionModal() { $('session-modal').style.display = 'none'; }
-Object.assign(window, { goTo: name => showPage(name), setTheme, setMode, setCustomFocusDuration, enableTimerNotifications, toggleTimer, resetTimer, filterTasks, addTask, toggleTask, deleteTask, openNoteEditor, closeNoteEditor, saveNote, sendMessage, sendChip, stopTutor, regenerateTutor, saveTutorAsNote, clearTutorHistory, searchTutorHistory, selectLearningSubject, selectTutorSubject, selectTutorMode, addSubjectFromForm, addFlashcardFromForm, revealFlashcard, rateFlashcard, createExamPlanFromForm, completePlannedItem, finishOnboard, editProfile, showAuthModal, closeAuthModal, submitAuth, logoutUser, closeSessionModal });
+Object.assign(window, { goTo: name => showPage(name), setTheme, setMode, setCustomFocusDuration, enableTimerNotifications, toggleTimer, resetTimer, filterTasks, addTask, toggleTask, deleteTask, openNoteEditor, closeNoteEditor, saveNote, sendMessage, sendChip, stopTutor, regenerateTutor, saveTutorAsNote, clearTutorHistory, searchTutorHistory, selectLearningSubject, selectTutorSubject, selectTutorMode, addSubjectFromForm, addFlashcardFromForm, revealFlashcard, rateFlashcard, createExamPlanFromForm, completePlannedItem, claimChallenge: claimLearningChallenge, useStreakFreezeFromProfile, finishOnboard, editProfile, showAuthModal, closeAuthModal, submitAuth, logoutUser, closeSessionModal });
 auth = createAuthService({ config: window.STUDY_BUDDY_CONFIG, getState: () => state, loadLocal: loadState, saveLocal: saveState, guestState: () => loadState(null) || createDefaultState(), onState: update => { if (update.state) state = normalizeState(update.state); sync = { ...sync, ...update }; renderAll(); } });
 setInterval(tickTimer, 1000); document.addEventListener('visibilitychange', () => { if (!document.hidden) tickTimer(); }); window.addEventListener('beforeunload', () => saveState(sync.user, state));
 renderAll(); auth.init().catch(() => { sync = { ...sync, mode: 'error', message: 'Aanmelden bij synchronisatie is mislukt.' }; renderAuth(); });

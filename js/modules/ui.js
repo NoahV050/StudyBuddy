@@ -1,4 +1,5 @@
 import { badges, xpToNext } from './gamification.js';
+import { canUseStreakFreeze } from './challenges.js';
 import { rolloverDailyState } from './state.js';
 import { MODES } from './timer.js';
 
@@ -268,6 +269,13 @@ export function renderProfile(state, sync) {
   const next = xpToNext(state.xp);
   byId('xp-next-lbl').textContent = `${next.cur} / ${next.needed}`;
   byId('xp-bar').style.width = `${Math.min(100, Math.round(next.cur / Math.max(1, next.needed) * 100))}%`;
+  byId('streak-freeze-count').textContent = state.streakFreezeCount === 1
+    ? 'Je hebt 1 reeks-vriezer beschikbaar.'
+    : `Je hebt ${state.streakFreezeCount} reeks-vriezers beschikbaar.`;
+  byId('streak-freeze-hint').textContent = canUseStreakFreeze(state)
+    ? 'Er is één dag overgeslagen. Je kunt de vriezer gebruiken om je reeks te behouden.'
+    : 'Je kunt hem gebruiken als je precies één dag hebt overgeslagen.';
+  byId('streak-freeze-btn').disabled = !canUseStreakFreeze(state);
 
   const chart = byId('bar-chart-wrap');
   chart.replaceChildren();
@@ -292,10 +300,12 @@ export function renderProfile(state, sync) {
 
   const grid = byId('badge-grid');
   grid.replaceChildren();
-  badges.forEach(([, name, icon, condition]) => {
+  badges.forEach(([, name, icon, condition, description]) => {
     const item = document.createElement('div');
     item.className = `badge-item${condition(state) ? ' earned' : ''}`;
     item.textContent = `${icon} ${name}`;
+    item.title = description;
+    item.setAttribute('aria-label', `${name}: ${description} ${condition(state) ? 'Behaald.' : 'Nog niet behaald.'}`);
     grid.append(item);
   });
   renderSessionLog(state);

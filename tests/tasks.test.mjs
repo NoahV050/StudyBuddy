@@ -17,6 +17,7 @@ test('awards XP once for creating and completing the same task', () => {
 
   assert.equal(state.tasks.length, 1);
   assert.equal(state.tasks[0].done, true);
+  assert.ok(state.tasks[0].completed_at);
   assert.equal(state.xp, 30);
 });
 

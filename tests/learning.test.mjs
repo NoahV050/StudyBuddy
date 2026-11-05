@@ -20,7 +20,7 @@ test('migrates version 3 users into subjects without dropping their study data',
     sessionLog: [{ id: 'legacy-session', label: 'Engels · 25 min' }]
   });
 
-  assert.equal(state.version, 4);
+  assert.equal(state.version, 5);
   assert.equal(state.name, 'Ravi');
   assert.equal(state.xp, 125);
   assert.ok(state.subjects.some(subject => subject.name === 'Wiskunde'));

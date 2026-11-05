@@ -1,4 +1,5 @@
 import { dueFlashcards, getStudyStats, getTodayPlan } from './learning.js';
+import { getChallenges } from './challenges.js';
 import { localDateKey } from './state.js';
 import { byId } from './ui.js';
 
@@ -81,6 +82,42 @@ export function renderLearning(state, selectedSubjectId, revealed) {
     statsList.append(row);
   });
   if (!stats.subjectTotals.length) statsList.textContent = 'Je sessiestatistieken verschijnen hier.';
+
+  const challengeList = byId('challenge-list');
+  challengeList.replaceChildren();
+  getChallenges(state).forEach(challenge => {
+    const row = document.createElement('div');
+    row.className = 'challenge-item';
+    const heading = document.createElement('div');
+    heading.className = 'challenge-heading';
+    const title = document.createElement('strong');
+    title.textContent = `${challenge.periodLabel} · ${challenge.title}`;
+    const progressText = document.createElement('span');
+    progressText.textContent = `${challenge.progress}/${challenge.target} ${challenge.unit}`;
+    heading.append(title, progressText);
+    const progress = document.createElement('div');
+    progress.className = 'challenge-progress';
+    progress.setAttribute('role', 'progressbar');
+    progress.setAttribute('aria-label', `${challenge.periodLabel}: ${challenge.title}`);
+    progress.setAttribute('aria-valuemin', '0');
+    progress.setAttribute('aria-valuemax', String(challenge.target));
+    progress.setAttribute('aria-valuenow', String(challenge.progress));
+    const fill = document.createElement('span');
+    fill.style.width = `${Math.round(challenge.progress / challenge.target * 100)}%`;
+    progress.append(fill);
+    row.append(heading, progress);
+    if (challenge.progress >= challenge.target || challenge.claimed) {
+      const claim = document.createElement('button');
+      claim.type = 'button';
+      claim.className = 'btn btn-sm challenge-claim';
+      claim.textContent = challenge.claimed ? 'XP ontvangen' : `Ontvang ${challenge.reward} XP`;
+      claim.disabled = challenge.claimed;
+      claim.setAttribute('aria-label', `${challenge.claimed ? 'XP al ontvangen' : 'Ontvang'} voor ${challenge.periodLabel.toLocaleLowerCase('nl')} ${challenge.title}`);
+      if (!challenge.claimed) claim.addEventListener('click', () => window.claimChallenge(challenge.period, challenge.id));
+      row.append(claim);
+    }
+    challengeList.append(row);
+  });
 
   const planList = byId('today-plan-list');
   planList.replaceChildren();

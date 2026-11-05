@@ -94,7 +94,8 @@ export function reviewFlashcard(state, cardId, quality, now = new Date()) {
   const due = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   due.setDate(due.getDate() + card.intervalDays);
   card.dueDate = localDateKey(due);
-  card.updated_at = nowIso();
+  card.updated_at = now.toISOString();
+  card.lastReviewedAt = card.updated_at;
   touch(state);
   return card;
 }

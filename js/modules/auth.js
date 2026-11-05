@@ -5,6 +5,13 @@ const updatedAt = item => {
   const parsed = Date.parse(item?.updated_at || '');
   return Number.isFinite(parsed) ? parsed : 0;
 };
+const latestTimestamp = (first, second) => {
+  const firstTime = Date.parse(first || '');
+  const secondTime = Date.parse(second || '');
+  return Number.isFinite(firstTime) && firstTime >= (Number.isFinite(secondTime) ? secondTime : 0)
+    ? first
+    : Number.isFinite(secondTime) ? second : '';
+};
 
 function preferredItem(current, incoming) {
   const currentTime = updatedAt(current);
@@ -66,6 +73,9 @@ export function mergeState(localState, remoteState) {
     sessionLog: mergeItems(local.sessionLog, remote.sessionLog).slice(0, 50),
     xpBase: Math.max(local.xpBase, remote.xpBase),
     xpEvents: mergeXpEvents(local.xpEvents, remote.xpEvents),
+    streak: Math.max(local.streak, remote.streak),
+    streakFreezeCount: Math.min(local.streakFreezeCount, remote.streakFreezeCount),
+    streakFreezeUsedAt: latestTimestamp(local.streakFreezeUsedAt, remote.streakFreezeUsedAt),
     studyBase: mergeStudyBase(local, remote, freshest, sameDay, sameWeek),
     studyEvents: mergeItems(local.studyEvents, remote.studyEvents)
   });
