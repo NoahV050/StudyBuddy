@@ -38,6 +38,7 @@ export function createDefaultState() {
     studyBase: { dayKey, studiedMin: 0, sessionsToday: 0, weekKey, weekData: [0, 0, 0, 0, 0, 0, 0] },
     studyEvents: [],
     tasks: [], notes: [], chatHistory: [], sessionLog: [],
+    tutorSubject: 'Wiskunde', tutorMode: 'uitleggen',
     timerMode: 'pomo', timerSeconds: 1500, timerTotal: 1500,
     timerRunning: false, timerEndsAt: null, timerSessionId: null, timerSubject: 'Wiskunde',
     taskFilter: 'all', theme: 'light'
@@ -53,7 +54,13 @@ const timestamp = value => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
-function migrateV1ToV2(state) { return state; }
+function migrateV1ToV2(state) {
+  return {
+    ...state,
+    tutorSubject: asText(state.tutorSubject, 80) || 'Wiskunde',
+    tutorMode: asText(state.tutorMode, 40) || 'uitleggen'
+  };
+}
 
 function migrateV2ToV3(state) {
   const dayKey = asText(state.dayKey, 10) || localDateKey();
@@ -217,11 +224,15 @@ export function normalizeState(candidate) {
   if (!next.timerRunning) { next.timerEndsAt = null; next.timerSessionId = null; }
   next.tasks = asArray(next.tasks).map(item => migrateLegacyItem(item, 'task'));
   next.notes = asArray(next.notes).map(item => migrateLegacyItem(item, 'note'));
+  next.tutorSubject = asText(next.tutorSubject, 80) || 'Wiskunde';
+  next.tutorMode = ['uitleggen', 'overhoren', 'samenvatten', 'huiswerk', 'examen'].includes(next.tutorMode) ? next.tutorMode : 'uitleggen';
   next.chatHistory = asArray(next.chatHistory).map(item => ({
     ...(item && typeof item === 'object' ? item : {}),
     id: asText(item?.id, 80) || createId('chat'),
     role: item?.role === 'assistant' ? 'assistant' : 'user',
     content: asText(item?.content),
+    subject: asText(item?.subject, 80) || 'Algemeen',
+    mode: asText(item?.mode, 40) || 'uitleggen',
     updated_at: item?.updated_at || new Date().toISOString()
   })).slice(-150);
   next.sessionLog = asArray(next.sessionLog).map(migrateSession).slice(0, 50);

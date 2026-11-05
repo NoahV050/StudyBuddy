@@ -153,6 +153,9 @@
           <select id="ai-subject" style="width:100%;padding:8px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);margin-bottom:10px">
             <option>Wiskunde</option><option>Natuurkunde</option><option>Geschiedenis</option><option>Nederlands</option><option>Anders</option>
           </select>
+          <select id="ai-mode" aria-label="Tutormodus" style="width:100%;padding:8px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary)">
+            <option value="uitleggen">Uitleggen</option><option value="overhoren">Overhoren</option><option value="samenvatten">Samenvatten</option><option value="huiswerk">Huiswerkhulp</option><option value="examen">Examenmodus</option>
+          </select>
         </div>
         <div class="quick-chips">
           <button class="chip" onclick="sendChip('Leg dit stap voor stap uit')">Stap voor stap</button>
@@ -162,9 +165,19 @@
         <div class="chat-area" id="chat-area">
           <div class="bubble ai">Hoi! Ik ben je Studiemaatje. Stel gerust je vraag!</div>
         </div>
+        <div class="tutor-actions">
+          <button class="btn btn-sm" type="button" onclick="stopTutor()" id="stop-tutor-btn" disabled>Stop</button>
+          <button class="btn btn-sm" type="button" onclick="regenerateTutor()" id="retry-tutor-btn">Opnieuw</button>
+          <button class="btn btn-sm" type="button" onclick="saveTutorAsNote()">Bewaar als notitie</button>
+          <button class="btn btn-sm" type="button" onclick="clearTutorHistory()">Wis vakgeschiedenis</button>
+        </div>
+        <div class="tutor-history-controls">
+          <label for="tutor-history-search" class="sr-only">Zoek in deze vakgeschiedenis</label>
+          <input id="tutor-history-search" placeholder="Zoek in dit vak…" oninput="searchTutorHistory()">
+        </div>
         <div class="chat-input-row">
-          <input id="chat-input" placeholder="Stel een vraag..." onkeydown="if(event.key==='Enter')sendMessage()">
-          <button class="send-btn" onclick="sendMessage()">
+          <input id="chat-input" maxlength="4000" placeholder="Stel een vraag..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}">
+          <button class="send-btn" type="button" aria-label="Stuur je vraag" onclick="sendMessage()">
             <svg width="14" height="14" viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
           </button>
         </div>
@@ -305,7 +318,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
-  <script type="module" src="js/script.js?version=4"></script>
+  <script type="module" src="js/script.js?version=5"></script>
   <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');</script>
 </body>
 </html>

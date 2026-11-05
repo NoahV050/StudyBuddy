@@ -85,11 +85,113 @@ export function addBubble(role, text) {
   return bubble;
 }
 
-export function renderChat(state) {
+function appendInlineMarkdown(parent, text) {
+  const pattern = /(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*|\$[^$\n]+\$)/g;
+  let cursor = 0;
+  for (const match of text.matchAll(pattern)) {
+    const index = match.index;
+    if (index > cursor) parent.append(document.createTextNode(text.slice(cursor, index)));
+    const token = match[0];
+    let element;
+    if (token.startsWith('**')) {
+      element = document.createElement('strong');
+      element.textContent = token.slice(2, -2);
+    } else if (token.startsWith('*')) {
+      element = document.createElement('em');
+      element.textContent = token.slice(1, -1);
+    } else {
+      element = document.createElement('code');
+      element.className = token.startsWith('$') ? 'math' : 'inline-code';
+      element.textContent = token.startsWith('$') ? token.slice(1, -1) : token.slice(1, -1);
+    }
+    parent.append(element);
+    cursor = index + token.length;
+  }
+  if (cursor < text.length) parent.append(document.createTextNode(text.slice(cursor)));
+}
+
+export function renderMarkdown(element, markdown) {
+  const fragment = document.createDocumentFragment();
+  const lines = String(markdown || '').split(/\r?\n/);
+  let paragraph = [];
+  let list = null;
+  let code = null;
+  const flushParagraph = () => {
+    if (!paragraph.length) return;
+    const node = document.createElement('p');
+    appendInlineMarkdown(node, paragraph.join(' '));
+    fragment.append(node);
+    paragraph = [];
+  };
+  const flushList = () => {
+    if (list) fragment.append(list);
+    list = null;
+  };
+  lines.forEach(line => {
+    if (line.startsWith('```')) {
+      flushParagraph();
+      flushList();
+      if (code) {
+        fragment.append(code);
+        code = null;
+      } else {
+        code = document.createElement('pre');
+        code.append(document.createElement('code'));
+      }
+      return;
+    }
+    if (code) {
+      code.firstElementChild.textContent += `${line}\n`;
+      return;
+    }
+    if (!line.trim()) {
+      flushParagraph();
+      flushList();
+      return;
+    }
+    const heading = line.match(/^(#{1,3})\s+(.+)$/);
+    if (heading) {
+      flushParagraph();
+      flushList();
+      const node = document.createElement(`h${heading[1].length + 2}`);
+      appendInlineMarkdown(node, heading[2]);
+      fragment.append(node);
+      return;
+    }
+    const item = line.match(/^\s*(?:[-*]|\d+\.)\s+(.+)$/);
+    if (item) {
+      flushParagraph();
+      if (!list) list = document.createElement(/^\s*\d+\./.test(line) ? 'ol' : 'ul');
+      const node = document.createElement('li');
+      appendInlineMarkdown(node, item[1]);
+      list.append(node);
+      return;
+    }
+    flushList();
+    paragraph.push(line.trim());
+  });
+  flushParagraph();
+  flushList();
+  if (code) fragment.append(code);
+  element.replaceChildren(fragment);
+}
+
+export function renderChat(state, subject = state.tutorSubject, search = '') {
   const area = byId('chat-area');
   area.replaceChildren();
-  if (!state.chatHistory.length) return addBubble('ai', 'Hoi! Ik ben je Studiemaatje tutor. Stel gerust een vraag; ik help je stap voor stap.');
-  state.chatHistory.forEach(item => addBubble(item.role === 'assistant' ? 'ai' : 'user', item.content));
+  const query = search.trim().toLocaleLowerCase('nl');
+  const messages = state.chatHistory.filter(item =>
+    item.subject === subject && (!query || item.content.toLocaleLowerCase('nl').includes(query))
+  );
+  if (!messages.length) {
+    return addBubble('ai', query
+      ? 'Geen berichten gevonden voor deze zoekopdracht.'
+      : 'Hoi! Ik ben je Studiemaatje tutor. Stel gerust een vraag; ik help je stap voor stap.');
+  }
+  messages.forEach(item => {
+    const bubble = addBubble(item.role === 'assistant' ? 'ai' : 'user', item.content);
+    if (item.role === 'assistant') renderMarkdown(bubble, item.content);
+  });
 }
 
 export function renderSessionLog(state) {
