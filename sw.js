@@ -1,9 +1,13 @@
-const CACHE_NAME = 'studiemaatje-v14';
-const urlsToCache = [
+const CACHE_NAME = 'studiemaatje-v15';
+const CACHE_PREFIX = 'studiemaatje-';
+const APP_SHELL = [
   '/',
   '/index.html',
+  '/manifest.json',
   '/css/styles.css',
-  '/js/script.js?version=13',
+  '/icons/icon-192.svg',
+  '/icons/icon-512.svg',
+  '/js/script.js?version=14',
   '/js/config.js',
   '/js/modules/state.js',
   '/js/modules/storage.js',
@@ -16,41 +20,70 @@ const urlsToCache = [
   '/js/modules/ui.js',
   '/js/modules/learning.js',
   '/js/modules/learning-ui.js',
-  '/js/modules/challenges.js'
+  '/js/modules/challenges.js',
+  '/js/modules/pwa.js'
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(async cache => {
-        await Promise.all(urlsToCache.map(async url => {
-          const requestUrl = new URL(url, self.location.origin);
-          requestUrl.searchParams.set('cache-version', '14');
-          const response = await fetch(requestUrl, { cache: 'reload' });
-          await cache.put(url, response);
-        }));
-      })
-  );
-  self.skipWaiting();
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    await Promise.all(APP_SHELL.map(async path => {
+      const requestUrl = new URL(path, self.location.origin);
+      requestUrl.searchParams.set('cache-version', CACHE_NAME);
+      const response = await fetch(requestUrl, { cache: 'reload' });
+      if (!response.ok) throw new Error(`App-bestand kon niet worden opgeslagen: ${path}`);
+      await cache.put(path, response);
+    }));
+  })());
+});
+
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => response || fetch(event.request))
-  );
+  const request = event.request;
+  const url = new URL(request.url);
+  if (request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+
+  if (request.mode === 'navigate') {
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(request);
+        if (response.ok) {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put('/index.html', response.clone());
+        }
+        return response;
+      } catch {
+        return await caches.match(request) || await caches.match('/index.html') ||
+          new Response('Je bent offline en de app is nog niet beschikbaar.', {
+            status: 503,
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+          });
+      }
+    })());
+    return;
+  }
+
+  event.respondWith((async () => {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.put(request, response.clone());
+    }
+    return response;
+  })());
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
-  );
+  event.waitUntil((async () => {
+    const names = await caches.keys();
+    await Promise.all(names
+      .filter(name => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME)
+      .map(name => caches.delete(name)));
+    await self.clients.claim();
+  })());
 });

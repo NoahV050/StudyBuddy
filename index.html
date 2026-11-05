@@ -20,15 +20,19 @@
       <span>100%</span>
     </div>
     <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+    <div class="update-banner" id="update-banner" role="status" aria-live="polite" hidden>
+      <span>Er staat een nieuwe versie klaar.</span>
+      <button class="btn btn-sm" type="button" id="apply-update-btn">Bijwerken</button>
+    </div>
     <main class="screen" id="screen" tabindex="-1">
 
       <div class="page active" id="pg-auth-landing" style="justify-content:center">
         <div class="landing-topbar">
           <div class="landing-badge">Studie flow</div>
           <div class="landing-theme-toggle">
-            <button class="btn btn-sm theme-btn" data-theme-value="light" onclick="setTheme('light')">Licht</button>
-            <button class="btn btn-sm theme-btn" data-theme-value="dark" onclick="setTheme('dark')">Donker</button>
-            <button class="btn btn-sm theme-btn" data-theme-value="auto" onclick="setTheme('auto')">Systeem</button>
+            <button class="btn btn-sm theme-btn" data-action="theme" data-theme-value="light">Licht</button>
+            <button class="btn btn-sm theme-btn" data-action="theme" data-theme-value="dark">Donker</button>
+            <button class="btn btn-sm theme-btn" data-action="theme" data-theme-value="auto">Systeem</button>
           </div>
         </div>
         <div class="onboard-hero">
@@ -38,8 +42,8 @@
           <div class="onboard-sub" id="auth-landing-note" style="font-size:12px;margin-top:8px">Na het inloggen vragen we een paar profielgegevens zoals je naam en leeftijd.</div>
         </div>
         <div style="padding:0 16px;display:flex;flex-direction:column;gap:12px">
-          <button class="btn" onclick="showAuthModal('signin')" id="signin-btn">Inloggen</button>
-          <button class="btn btn-primary" onclick="showAuthModal('signup')" id="signup-btn">Account maken</button>
+          <button class="btn" data-action="show-auth" data-mode="signin" id="signin-btn">Inloggen</button>
+          <button class="btn btn-primary" data-action="show-auth" data-mode="signup" id="signup-btn">Account maken</button>
         </div>
       </div>
 
@@ -78,7 +82,7 @@
             <label class="sec-hdr" for="ob-goal">Je eerste dagdoel (minuten)</label>
             <input id="ob-goal" type="number" min="5" max="720" step="5" value="120">
           </div>
-          <button class="btn btn-primary btn-full" onclick="finishOnboard()">Profiel opslaan</button>
+          <button class="btn btn-primary btn-full" data-action="finish-onboard">Profiel opslaan</button>
         </div>
       </div>
 
@@ -97,7 +101,7 @@
           </div>
           <div class="progress-track" role="progressbar" aria-label="Dagdoel" aria-valuemin="0" aria-valuemax="120" aria-valuenow="0" id="goal-progress"><div class="progress-fill" id="goal-bar" style="width:0%"></div></div>
           <div style="margin-top:12px">
-            <button class="btn btn-primary btn-full" onclick="goTo('focus')">Start focussessie</button>
+            <button class="btn btn-primary btn-full" data-action="go-to" data-page="focus">Start focussessie</button>
           </div>
         </div>
         <div class="metric-row">
@@ -129,19 +133,19 @@
           <h1 class="page-title">Focustimer</h1>
         </div>
         <div style="display:flex;gap:8px;margin-bottom:20px;width:100%">
-          <button class="btn btn-sm" id="mode-pomo" onclick="setMode('pomo')" style="flex:1">Pomodoro 25m</button>
-          <button class="btn btn-sm" id="mode-short" onclick="setMode('short')" style="flex:1">Kort 10m</button>
-          <button class="btn btn-sm" id="mode-long" onclick="setMode('long')" style="flex:1">Diep 50m</button>
+          <button class="btn btn-sm" id="mode-pomo" data-action="set-mode" data-mode="pomo" aria-pressed="true" style="flex:1">Pomodoro 25m</button>
+          <button class="btn btn-sm" id="mode-short" data-action="set-mode" data-mode="short" aria-pressed="false" style="flex:1">Kort 10m</button>
+          <button class="btn btn-sm" id="mode-long" data-action="set-mode" data-mode="long" aria-pressed="false" style="flex:1">Diep 50m</button>
         </div>
         <div class="timer-settings">
           <label for="custom-focus-minutes">Eigen sessie (5–180 min)</label>
           <div class="add-task-row">
             <input id="custom-focus-minutes" type="number" min="5" max="180" value="25">
-            <button class="btn btn-sm" type="button" onclick="setCustomFocusDuration()">Instellen</button>
+            <button class="btn btn-sm" type="button" data-action="custom-focus">Instellen</button>
           </div>
           <label for="focus-task">Koppel aan een taak (optioneel)</label>
           <select id="focus-task" class="learning-select"></select>
-          <button class="btn btn-sm" type="button" id="timer-notification-btn" onclick="enableTimerNotifications()">Meldingen toestaan</button>
+          <button class="btn btn-sm" type="button" id="timer-notification-btn" data-action="timer-notifications">Meldingen toestaan</button>
         </div>
         <div class="timer-ring">
           <svg width="180" height="180" viewBox="0 0 180 180">
@@ -154,8 +158,8 @@
           </div>
         </div>
         <div style="display:flex;gap:10px;width:100%;max-width:280px;margin-bottom:20px">
-          <button class="btn" id="btn-start" onclick="toggleTimer()" style="flex:2">Start</button>
-          <button class="btn" onclick="resetTimer()" style="flex:1">Opnieuw</button>
+          <button class="btn" id="btn-start" data-action="toggle-timer" style="flex:2">Start</button>
+          <button class="btn" data-action="reset-timer" style="flex:1">Opnieuw</button>
         </div>
         <div style="width:100%">
           <div class="sec-hdr">Vak</div>
@@ -174,35 +178,35 @@
         <div style="padding:14px 14px 8px">
           <h1 class="page-title">AI-tutor</h1>
           <label class="sr-only" for="ai-subject">Vak voor de tutor</label>
-          <select id="ai-subject" onchange="selectTutorSubject(this.value)" style="width:100%;padding:8px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);margin-bottom:10px">
+          <select id="ai-subject" data-change-action="tutor-subject" style="width:100%;padding:8px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);margin-bottom:10px">
             <option>Wiskunde</option><option>Natuurkunde</option><option>Geschiedenis</option><option>Nederlands</option><option>Anders</option>
           </select>
-          <select id="ai-mode" onchange="selectTutorMode(this.value)" aria-label="Tutormodus" style="width:100%;padding:8px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary)">
+          <select id="ai-mode" data-change-action="tutor-mode" aria-label="Tutormodus" style="width:100%;padding:8px;border-radius:8px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary)">
             <option value="uitleggen">Uitleggen</option><option value="overhoren">Overhoren</option><option value="samenvatten">Samenvatten</option><option value="huiswerk">Huiswerkhulp</option><option value="examen">Examenmodus</option>
           </select>
         </div>
         <div class="quick-chips">
-          <button class="chip" onclick="sendChip('Leg dit stap voor stap uit')">Stap voor stap</button>
-          <button class="chip" onclick="sendChip('Geef me een simpel voorbeeld')">Voorbeeld</button>
-          <button class="chip" onclick="sendChip('Overhoor mij over dit onderwerp')">Overhoor mij</button>
+          <button class="chip" data-action="send-chip" data-message="Leg dit stap voor stap uit">Stap voor stap</button>
+          <button class="chip" data-action="send-chip" data-message="Geef me een simpel voorbeeld">Voorbeeld</button>
+          <button class="chip" data-action="send-chip" data-message="Overhoor mij over dit onderwerp">Overhoor mij</button>
         </div>
         <div class="chat-area" id="chat-area">
           <div class="bubble ai">Hoi! Ik ben je Studiemaatje. Stel gerust je vraag!</div>
         </div>
         <div class="tutor-actions">
-          <button class="btn btn-sm" type="button" onclick="stopTutor()" id="stop-tutor-btn" disabled>Stop</button>
-          <button class="btn btn-sm" type="button" onclick="regenerateTutor()" id="retry-tutor-btn">Opnieuw</button>
-          <button class="btn btn-sm" type="button" onclick="saveTutorAsNote()">Bewaar als notitie</button>
-          <button class="btn btn-sm" type="button" onclick="clearTutorHistory()">Wis vakgeschiedenis</button>
+          <button class="btn btn-sm" type="button" data-action="stop-tutor" id="stop-tutor-btn" disabled>Stop</button>
+          <button class="btn btn-sm" type="button" data-action="retry-tutor" id="retry-tutor-btn">Opnieuw</button>
+          <button class="btn btn-sm" type="button" data-action="save-tutor-note">Bewaar als notitie</button>
+          <button class="btn btn-sm" type="button" data-action="clear-tutor-history">Wis vakgeschiedenis</button>
         </div>
         <div class="tutor-history-controls">
           <label for="tutor-history-search" class="sr-only">Zoek in deze vakgeschiedenis</label>
-          <input id="tutor-history-search" placeholder="Zoek in dit vak…" oninput="searchTutorHistory()">
+          <input id="tutor-history-search" placeholder="Zoek in dit vak…" data-input-action="search-tutor-history">
         </div>
         <div class="chat-input-row">
           <label class="sr-only" for="chat-input">Stel een vraag aan je tutor</label>
-          <input id="chat-input" maxlength="4000" placeholder="Stel een vraag..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}">
-          <button class="send-btn" type="button" aria-label="Stuur je vraag" onclick="sendMessage()">
+          <input id="chat-input" maxlength="4000" placeholder="Stel een vraag..." data-enter-action="send-message">
+          <button class="send-btn" type="button" aria-label="Stuur je vraag" data-action="send-message">
             <svg width="14" height="14" viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
           </button>
         </div>
@@ -211,9 +215,9 @@
       <div class="page" id="pg-tasks">
         <h1 class="page-title">Taken</h1>
         <div style="display:flex;gap:8px;margin-bottom:12px">
-          <button class="btn btn-sm" id="filter-all" onclick="filterTasks('all')" style="font-weight:500">Alles</button>
-          <button class="btn btn-sm" id="filter-todo" onclick="filterTasks('todo')">Te doen</button>
-          <button class="btn btn-sm" id="filter-done" onclick="filterTasks('done')">Klaar</button>
+          <button class="btn btn-sm" id="filter-all" data-action="filter-tasks" data-filter="all" style="font-weight:500">Alles</button>
+          <button class="btn btn-sm" id="filter-todo" data-action="filter-tasks" data-filter="todo">Te doen</button>
+          <button class="btn btn-sm" id="filter-done" data-action="filter-tasks" data-filter="done">Klaar</button>
         </div>
         <div class="card" style="flex:1">
           <div id="task-list"></div>
@@ -223,8 +227,8 @@
           <input id="task-due-date" type="date" class="learning-select">
           <div class="add-task-row">
             <label class="sr-only" for="new-task-input">Nieuwe taak</label>
-            <input id="new-task-input" maxlength="300" placeholder="Voeg een taak toe..." onkeydown="if(event.key==='Enter')addTask()">
-            <button class="btn btn-sm" type="button" aria-label="Taak toevoegen" onclick="addTask()">+</button>
+            <input id="new-task-input" maxlength="300" placeholder="Voeg een taak toe..." data-enter-action="add-task">
+            <button class="btn btn-sm" type="button" aria-label="Taak toevoegen" data-action="add-task">+</button>
           </div>
         </div>
       </div>
@@ -239,7 +243,7 @@
             <label for="new-subject-name">Nieuw vak</label>
             <div class="add-task-row">
               <input id="new-subject-name" maxlength="80" placeholder="Bijv. Engels">
-              <button class="btn btn-sm" type="button" onclick="addSubjectFromForm()">Toevoegen</button>
+              <button class="btn btn-sm" type="button" data-action="add-subject">Toevoegen</button>
             </div>
             <label for="new-subject-color">Vak kleur</label>
             <input id="new-subject-color" type="color" value="#6750A4">
@@ -251,17 +255,17 @@
         <section class="card learning-section">
           <h2 class="sec-hdr">Herhaalkaartjes</h2>
           <label for="learn-subject-select">Vak</label>
-          <select id="learn-subject-select" class="learning-select" onchange="selectLearningSubject(this.value)"></select>
+          <select id="learn-subject-select" class="learning-select" data-change-action="learning-subject"></select>
           <div class="flashcard" aria-live="polite">
             <div id="flashcard-due-count" class="metric-label">0 klaar om te herhalen</div>
             <div id="flashcard-front" class="flashcard-face"></div>
             <div id="flashcard-back" class="flashcard-face flashcard-answer" hidden></div>
-            <button id="flashcard-reveal" class="btn btn-sm" type="button" onclick="revealFlashcard()">Toon antwoord</button>
+            <button id="flashcard-reveal" class="btn btn-sm" type="button" data-action="reveal-card">Toon antwoord</button>
             <div id="flashcard-actions" class="flashcard-actions" hidden>
-              <button class="btn btn-sm" type="button" onclick="rateFlashcard(0)">Opnieuw</button>
-              <button class="btn btn-sm" type="button" onclick="rateFlashcard(3)">Lastig</button>
-              <button class="btn btn-sm btn-primary" type="button" onclick="rateFlashcard(4)">Goed</button>
-              <button class="btn btn-sm" type="button" onclick="rateFlashcard(5)">Makkelijk</button>
+              <button class="btn btn-sm" type="button" data-action="rate-card" data-quality="0">Opnieuw</button>
+              <button class="btn btn-sm" type="button" data-action="rate-card" data-quality="3">Lastig</button>
+              <button class="btn btn-sm btn-primary" type="button" data-action="rate-card" data-quality="4">Goed</button>
+              <button class="btn btn-sm" type="button" data-action="rate-card" data-quality="5">Makkelijk</button>
             </div>
           </div>
           <div class="learning-form">
@@ -269,7 +273,7 @@
             <input id="flashcard-question" maxlength="1000" placeholder="Wat wil je onthouden?">
             <label for="flashcard-answer-input">Antwoord</label>
             <textarea id="flashcard-answer-input" maxlength="3000" rows="3" placeholder="Schrijf het antwoord"></textarea>
-            <button class="btn btn-primary btn-full" type="button" onclick="addFlashcardFromForm()">Kaartje toevoegen</button>
+            <button class="btn btn-primary btn-full" type="button" data-action="add-flashcard">Kaartje toevoegen</button>
           </div>
         </section>
 
@@ -279,7 +283,7 @@
           <input id="exam-date" type="date">
           <label for="exam-topics">Onderwerpen, één per regel</label>
           <textarea id="exam-topics" maxlength="3000" rows="3" placeholder="Bijv. hoofdstuk 1&#10;Vergelijkingen"></textarea>
-          <button class="btn btn-primary btn-full" type="button" onclick="createExamPlanFromForm()">Maak mijn studieschema</button>
+          <button class="btn btn-primary btn-full" type="button" data-action="create-exam-plan">Maak mijn studieschema</button>
         </section>
 
         <section class="card learning-section">
@@ -307,16 +311,16 @@
       <div class="page" id="pg-notes">
         <div id="notes-list-view">
         <h1 class="page-title">Notities</h1>
-        <button class="btn btn-primary btn-full" onclick="openNoteEditor(-1)" style="margin-bottom:12px">+ Nieuwe notitie</button>
+        <button class="btn btn-primary btn-full" data-action="open-note" data-note-id="-1" style="margin-bottom:12px">+ Nieuwe notitie</button>
         <div id="notes-list"></div>
         </div>
         <div class="note-editor" id="notes-editor-view" style="display:none;flex:1;flex-direction:column;gap:10px">
-          <div style="display:flex;justify-content:space-between;align-items:center"><h1 class="page-title">Notitie</h1><button class="btn btn-sm" onclick="closeNoteEditor()">Annuleren</button></div>
+          <div style="display:flex;justify-content:space-between;align-items:center"><h1 class="page-title">Notitie</h1><button class="btn btn-sm" data-action="close-note-editor">Annuleren</button></div>
           <label class="sec-hdr" for="note-title-input">Titel</label>
           <input id="note-title-input" maxlength="300" placeholder="Titel van je notitie">
           <label class="sec-hdr" for="note-body-input">Inhoud</label>
           <textarea id="note-body-input" maxlength="10000" placeholder="Schrijf je notitie hier…" style="flex:1;min-height:180px"></textarea>
-          <button class="btn btn-primary btn-full" onclick="saveNote()">Notitie opslaan</button>
+          <button class="btn btn-primary btn-full" data-action="save-note">Notitie opslaan</button>
         </div>
       </div>
 
@@ -330,12 +334,12 @@
             <div style="font-size:12px;color:var(--color-text-secondary)" id="profile-meta-lbl">Leeftijd -</div>
           </div>
         </div>
-        <button class="btn btn-full" onclick="editProfile()" style="margin-bottom:12px">Profiel bewerken</button>
+        <button class="btn btn-full" data-action="edit-profile" style="margin-bottom:12px">Profiel bewerken</button>
         <section class="card streak-freeze-card" aria-labelledby="streak-freeze-title">
           <h2 id="streak-freeze-title" class="sec-hdr">Reeks-vriezer</h2>
           <p id="streak-freeze-count"></p>
           <p id="streak-freeze-hint" class="challenge-intro"></p>
-          <button id="streak-freeze-btn" class="btn btn-sm" type="button" onclick="useStreakFreezeFromProfile()">Gebruik reeks-vriezer</button>
+          <button id="streak-freeze-btn" class="btn btn-sm" type="button" data-action="use-streak-freeze">Gebruik reeks-vriezer</button>
         </section>
         <div class="card" style="margin-bottom:12px">
           <div style="display:flex;justify-content:space-between">
@@ -352,70 +356,56 @@
         <div class="badge-grid" id="badge-grid" role="list" aria-label="Badges en voorwaarden"></div>
         <div class="sec-hdr" style="margin-top:16px">Thema</div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-sm theme-btn" id="theme-light-btn" data-theme-value="light" onclick="setTheme('light')">Licht</button>
-          <button class="btn btn-sm theme-btn" id="theme-dark-btn" data-theme-value="dark" onclick="setTheme('dark')">Donker</button>
-          <button class="btn btn-sm theme-btn" id="theme-auto-btn" data-theme-value="auto" onclick="setTheme('auto')">Systeem</button>
+          <button class="btn btn-sm theme-btn" id="theme-light-btn" data-action="theme" data-theme-value="light">Licht</button>
+          <button class="btn btn-sm theme-btn" id="theme-dark-btn" data-action="theme" data-theme-value="dark">Donker</button>
+          <button class="btn btn-sm theme-btn" id="theme-auto-btn" data-action="theme" data-theme-value="auto">Systeem</button>
         </div>
         <div class="sec-hdr" style="margin-top:12px">Account</div>
         <div class="pill" id="auth-status-pill" style="margin-bottom:4px">Uitgelogd</div>
         <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:12px" id="auth-status-text">Log in of maak een account.</div>
         <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:12px" id="signed-in-email"></div>
-        <button class="btn btn-full" onclick="logoutUser()" id="logout-btn" style="display:none">Uitloggen</button>
+        <button class="btn btn-full" data-action="logout" id="logout-btn" style="display:none">Uitloggen</button>
       </div>
 
     </main>
 
     <nav class="tab-bar" id="tab-bar" aria-label="Hoofdnavigatie" style="display:none">
-      <button type="button" class="tab-item active" id="tab-home" aria-current="page" onclick="goTo('home')">
+      <button type="button" class="tab-item active" id="tab-home" aria-current="page" data-action="go-to" data-page="home">
         <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10.8 12 3l9 7.8v9.7a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1z"/></svg></span>
         <span class="tab-label">Start</span>
       </button>
-      <button type="button" class="tab-item" id="tab-focus" onclick="goTo('focus')">
+      <button type="button" class="tab-item" id="tab-focus" data-action="go-to" data-page="focus">
         <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-3.2a5.8 5.8 0 1 1-1.7-4.1L18 6A8.9 8.9 0 0 0 12 3zm7.7 0L14 8.7V10h1.3L21 4.3z"/></svg></span>
         <span class="tab-label">Focus</span>
       </button>
-      <button type="button" class="tab-item" id="tab-ai" onclick="goTo('ai')">
+      <button type="button" class="tab-item" id="tab-ai" data-action="go-to" data-page="ai">
         <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2.5 14 7l4.9.5-3.7 3.2 1.1 4.8L12 13.1 7.7 15.5l1.1-4.8L5.1 7.5 10 7z"/></svg></span>
         <span class="tab-label">Tutor</span>
       </button>
-      <button type="button" class="tab-item" id="tab-tasks" onclick="goTo('tasks')">
+      <button type="button" class="tab-item" id="tab-tasks" data-action="go-to" data-page="tasks">
         <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9.2 17.6 4.8 13.2l1.7-1.7 2.7 2.7 8.3-8.3 1.7 1.7zM4 5h11v2H4zm0 12h7v2H4z"/></svg></span>
         <span class="tab-label">Taken</span>
       </button>
-      <button type="button" class="tab-item" id="tab-learn" onclick="goTo('learn')">
+      <button type="button" class="tab-item" id="tab-learn" data-action="go-to" data-page="learn">
         <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5zm2.5-.5a.5.5 0 0 0 0 1H17V4zM6.5 17H17V7H6.5a2.5 2.5 0 0 1-1-.2v10.4c.3-.1.7-.2 1-.2"/></svg></span>
         <span class="tab-label">Leren</span>
       </button>
-      <button type="button" class="tab-item" id="tab-notes" onclick="goTo('notes')">
+      <button type="button" class="tab-item" id="tab-notes" data-action="go-to" data-page="notes">
         <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3.5h9.5L20 8v12a.5.5 0 0 1-.5.5h-13A.5.5 0 0 1 6 20zM14.5 4.9V9H18z"/></svg></span>
         <span class="tab-label">Notities</span>
       </button>
-      <button type="button" class="tab-item" id="tab-profile" onclick="goTo('profile')">
+      <button type="button" class="tab-item" id="tab-profile" data-action="go-to" data-page="profile">
         <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12a4.2 4.2 0 1 0-4.2-4.2A4.2 4.2 0 0 0 12 12zm0 2.2c-4 0-7.2 2.1-7.2 4.6V21h14.4v-2.2c0-2.5-3.2-4.6-7.2-4.6z"/></svg></span>
         <span class="tab-label">Profiel</span>
       </button>
     </nav>
-
-    <div class="modal-overlay" id="api-modal" style="display:none">
-      <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="api-modal-title">
-        <div class="modal-title" id="api-modal-title">Google AI Studio API-sleutel</div>
-        <div class="modal-sub">Haal je sleutel via aistudio.google.com</div>
-        <label class="sr-only" for="api-key-input">API-sleutel</label>
-        <input class="modal-input" id="api-key-input" type="password" placeholder="AIza...">
-        <div id="api-test-status" style="font-size:12px;margin-bottom:10px"></div>
-        <div style="display:flex;gap:8px">
-          <button class="btn" onclick="closeApiModal()">Annuleren</button>
-          <button class="btn btn-primary" onclick="saveApiKey()">Opslaan</button>
-        </div>
-      </div>
-    </div>
 
     <div class="modal-overlay" id="session-modal" style="display:none">
       <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="session-modal-title" style="text-align:center">
         <div style="font-size:36px;margin-bottom:8px">+</div>
         <div class="modal-title" id="session-modal-title">Sessie afgerond!</div>
         <div style="font-size:13px;color:var(--color-text-secondary);margin:6px 0 14px" id="session-complete-msg">Goed bezig!</div>
-        <button class="btn btn-primary btn-full" onclick="closeSessionModal()">XP ontvangen</button>
+        <button class="btn btn-primary btn-full" data-action="close-session-modal">XP ontvangen</button>
       </div>
     </div>
 
@@ -426,11 +416,11 @@
         <label class="sr-only" for="auth-email-input">E-mailadres</label>
         <input class="modal-input" id="auth-email-input" type="email" autocomplete="email" placeholder="E-mailadres">
         <label class="sr-only" for="auth-password-input">Wachtwoord</label>
-        <input class="modal-input" id="auth-password-input" type="password" autocomplete="current-password" placeholder="Wachtwoord">
+        <input class="modal-input" id="auth-password-input" type="password" autocomplete="current-password" placeholder="Wachtwoord" data-enter-action="submit-auth">
         <div id="auth-modal-status" style="font-size:12px;margin-bottom:10px"></div>
         <div style="display:flex;gap:8px">
-          <button class="btn" onclick="closeAuthModal()">Annuleren</button>
-          <button class="btn btn-primary" id="auth-submit-btn" onclick="submitAuth()">Inloggen</button>
+          <button class="btn" data-action="close-auth-modal">Annuleren</button>
+          <button class="btn btn-primary" id="auth-submit-btn" data-action="submit-auth">Inloggen</button>
         </div>
       </div>
     </div>
@@ -438,7 +428,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
-  <script type="module" src="js/script.js?version=13"></script>
-  <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');</script>
+  <script type="module" src="js/script.js?version=14"></script>
 </body>
 </html>

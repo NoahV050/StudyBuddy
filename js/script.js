@@ -9,6 +9,7 @@ import { createAuthService } from './modules/auth.js';
 import { addFlashcard, addSubject, completePlanItem, createExamPlan, reviewFlashcard } from './modules/learning.js';
 import { renderLearning as renderLearningView } from './modules/learning-ui.js';
 import { claimChallenge, useStreakFreeze } from './modules/challenges.js';
+import { initializePwa } from './modules/pwa.js';
 import {
   addBubble,
   byId,
@@ -24,7 +25,9 @@ import {
 } from './modules/ui.js';
 
 let state = loadState(null) || createDefaultState();
-let sync = { mode: 'guest', message: 'Je gegevens staan alleen op dit apparaat.', user: null };
+let sync = navigator.onLine !== false
+  ? { mode: 'guest', message: 'Je gegevens staan alleen op dit apparaat.', user: null }
+  : { mode: 'offline', message: 'Offline: wijzigingen staan op dit apparaat en worden later gesynchroniseerd.', user: null };
 let auth, editingNoteId = null, chatAbortController = null;
 let learningSubjectId = state.subjects?.find(subject => !subject.deleted)?.id || '';
 let flashcardRevealed = false;
@@ -86,7 +89,18 @@ function showPage(name, showTabs = true) {
   if (name === 'profile') renderProfile();
   if (name === 'home') renderHome();
 }
-function ensureShell() { if (!sync.user) return showPage('auth-landing', false); if (!state.profileComplete) return showPage('profile-setup', false); if (!$('pg-home').classList.contains('active')) showPage('home'); }
+let shortcutPage = new URLSearchParams(location.search).get('shortcut');
+function ensureShell() {
+  if (!sync.user) return showPage('auth-landing', false);
+  if (!state.profileComplete) return showPage('profile-setup', false);
+  if (['focus', 'tasks', 'ai', 'learn', 'notes', 'profile'].includes(shortcutPage)) {
+    const page = shortcutPage;
+    shortcutPage = null;
+    history.replaceState(null, '', location.pathname);
+    return showPage(page);
+  }
+  if (!$('pg-home').classList.contains('active')) showPage('home');
+}
 function renderAll() { document.documentElement.dataset.theme = state.theme; renderOnboarding(); renderTimer(); renderTasks(); renderNotes(); renderChat(); renderHome(); renderProfile(); renderLearning(); ensureShell(); }
 function completeCurrentTimer(sessionId, taskId) { const result = completeTimer(state, sessionId, new Date(), taskId); if (!result.completed) return; awardXp(state, result.minutes * 2, `timer:${sessionId}`); save(); renderAll(); $('session-complete-msg').textContent = `Je hebt ${result.subject} gestudeerd voor ${result.minutes} minuten. +${result.minutes * 2} XP!`; $('session-modal').style.display = 'flex'; if ('Notification' in window && Notification.permission === 'granted') new Notification('Focussessie afgerond', { body: `${result.minutes} minuten ${result.subject}. Goed gewerkt!` }); }
 function tickTimer() { const result = reconcileTimer(state); renderTimer(); if (result.completed) completeCurrentTimer(result.sessionId, result.taskId); }
@@ -283,7 +297,78 @@ function closeAuthModal() { $('auth-modal').style.display = 'none'; $('auth-moda
 async function submitAuth() { const email = $('auth-email-input').value.trim(); const password = $('auth-password-input').value; if (!email || password.length < 6) return $('auth-modal-status').textContent = 'Vul een e-mailadres en een wachtwoord van minimaal 6 tekens in.'; try { const signedIn = authMode === 'signin' ? (await auth.signIn(email, password), true) : await auth.signUp(email, password); if (signedIn) closeAuthModal(); else $('auth-modal-status').textContent = 'Controleer je e-mail om je account te bevestigen.'; } catch (error) { $('auth-modal-status').textContent = error.message || 'Inloggen is mislukt.'; } }
 async function logoutUser() { try { await auth.signOut(); toast('Uitgelogd'); } catch { toast('Uitloggen is niet gelukt.'); } }
 function closeSessionModal() { $('session-modal').style.display = 'none'; }
-Object.assign(window, { goTo: name => showPage(name), setTheme, setMode, setCustomFocusDuration, enableTimerNotifications, toggleTimer, resetTimer, filterTasks, addTask, toggleTask, deleteTask, openNoteEditor, closeNoteEditor, saveNote, sendMessage, sendChip, stopTutor, regenerateTutor, saveTutorAsNote, clearTutorHistory, searchTutorHistory, selectLearningSubject, selectTutorSubject, selectTutorMode, addSubjectFromForm, addFlashcardFromForm, revealFlashcard, rateFlashcard, createExamPlanFromForm, completePlannedItem, claimChallenge: claimLearningChallenge, useStreakFreezeFromProfile, finishOnboard, editProfile, showAuthModal, closeAuthModal, submitAuth, logoutUser, closeSessionModal });
+Object.assign(window, { completePlannedItem, claimChallenge: claimLearningChallenge });
+const clickActions = {
+  theme: element => setTheme(element.dataset.themeValue),
+  'show-auth': element => showAuthModal(element.dataset.mode),
+  'finish-onboard': finishOnboard,
+  'go-to': element => showPage(element.dataset.page),
+  'set-mode': element => setMode(element.dataset.mode),
+  'custom-focus': setCustomFocusDuration,
+  'timer-notifications': enableTimerNotifications,
+  'toggle-timer': toggleTimer,
+  'reset-timer': resetTimer,
+  'send-chip': element => sendChip(element.dataset.message),
+  'stop-tutor': stopTutor,
+  'retry-tutor': regenerateTutor,
+  'save-tutor-note': saveTutorAsNote,
+  'clear-tutor-history': clearTutorHistory,
+  'send-message': () => sendMessage(),
+  'filter-tasks': element => filterTasks(element.dataset.filter),
+  'add-task': addTask,
+  'add-subject': addSubjectFromForm,
+  'reveal-card': revealFlashcard,
+  'rate-card': element => rateFlashcard(Number(element.dataset.quality)),
+  'add-flashcard': addFlashcardFromForm,
+  'create-exam-plan': createExamPlanFromForm,
+  'open-note': element => openNoteEditor(Number(element.dataset.noteId)),
+  'close-note-editor': closeNoteEditor,
+  'save-note': saveNote,
+  'edit-profile': editProfile,
+  'use-streak-freeze': useStreakFreezeFromProfile,
+  logout: logoutUser,
+  'close-session-modal': closeSessionModal,
+  'close-auth-modal': closeAuthModal,
+  'submit-auth': submitAuth
+};
+document.addEventListener('click', event => {
+  const trigger = event.target.closest?.('[data-action]');
+  const action = trigger && clickActions[trigger.dataset.action];
+  if (action) action(trigger);
+});
+document.addEventListener('change', event => {
+  const control = event.target;
+  if (control.dataset.changeAction === 'tutor-subject') selectTutorSubject(control.value);
+  if (control.dataset.changeAction === 'tutor-mode') selectTutorMode(control.value);
+  if (control.dataset.changeAction === 'learning-subject') selectLearningSubject(control.value);
+});
+document.addEventListener('input', event => {
+  if (event.target.dataset.inputAction === 'search-tutor-history') searchTutorHistory();
+});
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Enter' || event.shiftKey) return;
+  const action = event.target.dataset.enterAction;
+  if (!action || !clickActions[action]) return;
+  event.preventDefault();
+  clickActions[action](event.target);
+});
 auth = createAuthService({ config: window.STUDY_BUDDY_CONFIG, getState: () => state, loadLocal: loadState, saveLocal: saveState, guestState: () => loadState(null) || createDefaultState(), onState: update => { if (update.state) state = normalizeState(update.state); sync = { ...sync, ...update }; renderAll(); } });
 setInterval(tickTimer, 1000); document.addEventListener('visibilitychange', () => { if (!document.hidden) tickTimer(); }); window.addEventListener('beforeunload', () => saveState(sync.user, state));
+window.addEventListener('offline', () => {
+  sync = { ...sync, mode: 'offline', message: 'Offline: wijzigingen staan op dit apparaat en worden later gesynchroniseerd.' };
+  renderAuth();
+});
+window.addEventListener('online', () => {
+  if (sync.user) {
+    sync = { ...sync, mode: 'syncing', message: 'Je offline wijzigingen worden gesynchroniseerd…' };
+    auth.scheduleSave();
+  } else {
+    sync = { ...sync, mode: 'guest', message: 'Je gegevens staan alleen op dit apparaat.' };
+  }
+  renderAuth();
+});
 renderAll(); auth.init().catch(() => { sync = { ...sync, mode: 'error', message: 'Aanmelden bij synchronisatie is mislukt.' }; renderAuth(); });
+initializePwa().catch(error => {
+  console.error('Studiemaatje kon de offlinevoorzieningen niet activeren.', error);
+  toast('Offline installeren is op dit moment niet beschikbaar.');
+});

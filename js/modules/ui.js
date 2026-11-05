@@ -251,8 +251,9 @@ export function renderHome(state) {
 
 export function renderAuth(sync) {
   const loggedIn = Boolean(sync.user);
-  byId('auth-status-pill').textContent = sync.mode === 'error' ? 'Sync fout' : loggedIn ? 'Verbonden' : 'Uitgelogd';
-  byId('auth-status-pill').className = `pill ${sync.mode === 'error' ? 'pill-coral' : loggedIn ? 'pill-teal' : 'pill-amber'}`;
+  const offline = sync.mode === 'offline';
+  byId('auth-status-pill').textContent = offline ? 'Offline' : sync.mode === 'error' ? 'Sync fout' : loggedIn ? 'Verbonden' : 'Uitgelogd';
+  byId('auth-status-pill').className = `pill ${offline ? 'pill-amber' : sync.mode === 'error' ? 'pill-coral' : loggedIn ? 'pill-teal' : 'pill-amber'}`;
   byId('auth-status-text').textContent = sync.message;
   byId('signed-in-email').textContent = loggedIn ? `Ingelogd als ${sync.user.email || ''}` : '';
   byId('logout-btn').style.display = loggedIn ? 'block' : 'none';

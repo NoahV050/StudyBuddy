@@ -142,6 +142,10 @@ export function createAuthService({ config, onState, getState, loadLocal, saveLo
 
   function saveRemote() {
     if (!client || !user || hydrating) return Promise.resolve();
+    if (navigator.onLine === false) {
+      status('offline', 'Offline: wijzigingen staan op dit apparaat en worden later gesynchroniseerd.');
+      return Promise.resolve();
+    }
     const targetUser = user;
     status('syncing', 'Je voortgang wordt opgeslagen…');
     const operation = () => writeRemote(targetUser).then(
@@ -156,6 +160,10 @@ export function createAuthService({ config, onState, getState, loadLocal, saveLo
   function scheduleSave() {
     if (!client || !user || hydrating) return;
     clearTimeout(saveTimer);
+    if (navigator.onLine === false) {
+      status('offline', 'Offline: wijzigingen staan op dit apparaat en worden later gesynchroniseerd.');
+      return;
+    }
     saveTimer = setTimeout(() => {
       saveRemote().catch(() => {
         status('error', 'Synchroniseren is niet gelukt. Je wijzigingen blijven op dit apparaat bewaard.');
