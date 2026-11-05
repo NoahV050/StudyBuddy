@@ -187,9 +187,19 @@
       </div>
 
       <div class="page" id="pg-notes">
+        <div id="notes-list-view">
         <div class="page-title">Notities</div>
         <button class="btn btn-primary btn-full" onclick="openNoteEditor(-1)" style="margin-bottom:12px">+ Nieuwe notitie</button>
         <div id="notes-list"></div>
+        </div>
+        <div class="note-editor" id="notes-editor-view" style="display:none;flex:1;flex-direction:column;gap:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center"><div class="page-title">Notitie</div><button class="btn btn-sm" onclick="closeNoteEditor()">Annuleren</button></div>
+          <label class="sec-hdr" for="note-title-input">Titel</label>
+          <input id="note-title-input" maxlength="300" placeholder="Titel van je notitie">
+          <label class="sec-hdr" for="note-body-input">Inhoud</label>
+          <textarea id="note-body-input" maxlength="10000" placeholder="Schrijf je notitie hier…" style="flex:1;min-height:180px"></textarea>
+          <button class="btn btn-primary btn-full" onclick="saveNote()">Notitie opslaan</button>
+        </div>
       </div>
 
       <div class="page" id="pg-profile">
@@ -295,7 +305,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
-  <script src="js/script.js"></script>
+  <script type="module" src="js/script.js?version=3"></script>
   <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');</script>
 </body>
 </html>
