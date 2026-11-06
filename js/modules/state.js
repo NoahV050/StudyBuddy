@@ -341,6 +341,7 @@ export function normalizeState(candidate) {
     content: asText(item?.content),
     subject: asText(item?.subject, 80) || 'Algemeen',
     mode: asText(item?.mode, 40) || 'uitleggen',
+    imageAttached: Boolean(item?.imageAttached),
     updated_at: item?.updated_at || new Date().toISOString()
   })).slice(-150);
   next.sessionLog = asArray(next.sessionLog).map(migrateSession).slice(0, 50);

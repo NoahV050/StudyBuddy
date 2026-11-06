@@ -10,6 +10,7 @@ import { addFlashcard, addSubject, completePlanItem, createExamPlan, reviewFlash
 import { renderLearning as renderLearningView } from './modules/learning-ui.js';
 import { claimChallenge, useStreakFreeze } from './modules/challenges.js';
 import { initializePwa } from './modules/pwa.js';
+import { resolveAppPage } from './modules/navigation.js';
 import {
   addBubble,
   byId,
@@ -28,7 +29,8 @@ let state = loadState(null) || createDefaultState();
 let sync = navigator.onLine !== false
   ? { mode: 'guest', message: 'Je gegevens staan alleen op dit apparaat.', user: null }
   : { mode: 'offline', message: 'Offline: wijzigingen staan op dit apparaat en worden later gesynchroniseerd.', user: null };
-let auth, editingNoteId = null, chatAbortController = null;
+let auth, editingNoteId = null, chatAbortController = null, tutorImage = null, lastTutorImage = null, tutorImagePreviewUrl = null;
+let currentPage = null;
 let learningSubjectId = state.subjects?.find(subject => !subject.deleted)?.id || '';
 let flashcardRevealed = false;
 const $ = byId;
@@ -78,6 +80,8 @@ function renderOnboarding(stateToRender = state) {
   $('ob-goal').value = stateToRender.dailyGoalMin;
 }
 function showPage(name, showTabs = true) {
+  currentPage = name;
+  $('phone').classList.toggle('setup-shell', name === 'auth-landing' || name === 'profile-setup');
   document.querySelectorAll('.page').forEach(page => {
     const active = page.id === `pg-${name}`;
     page.classList.toggle('active', active);
@@ -92,7 +96,9 @@ function showPage(name, showTabs = true) {
     if (active) tab.setAttribute('aria-current', 'page');
     else tab.removeAttribute('aria-current');
   });
-  $('tab-bar').style.display = showTabs && sync.user && state.profileComplete ? 'flex' : 'none';
+  const shellVisible = showTabs && Boolean(sync.user) && state.profileComplete;
+  $('tab-bar').hidden = !shellVisible;
+  $('app-header').hidden = !shellVisible;
   if (name === 'notes') renderNotes();
   if (name === 'ai') renderChat();
   if (name === 'learn') renderLearning();
@@ -101,15 +107,22 @@ function showPage(name, showTabs = true) {
 }
 let shortcutPage = new URLSearchParams(location.search).get('shortcut');
 function ensureShell() {
-  if (!sync.user) return showPage('auth-landing', false);
-  if (!state.profileComplete) return showPage('profile-setup', false);
+  const page = resolveAppPage({
+    authenticated: Boolean(sync.user),
+    profileComplete: state.profileComplete,
+    currentPage
+  });
+  if (!sync.user || page === 'profile-setup') {
+    if (page !== currentPage) showPage(page, false);
+    return;
+  }
   if (['focus', 'tasks', 'ai', 'learn', 'notes', 'profile'].includes(shortcutPage)) {
     const page = shortcutPage;
     shortcutPage = null;
     history.replaceState(null, '', location.pathname);
     return showPage(page);
   }
-  if (!$('pg-home').classList.contains('active')) showPage('home');
+  if (page !== currentPage) showPage(page);
 }
 function renderAll() { document.documentElement.dataset.theme = state.theme; renderOnboarding(); renderTimer(); renderTasks(); renderNotes(); renderChat(); renderHome(); renderProfile(); renderLearning(); ensureShell(); }
 function completeCurrentTimer(sessionId, taskId) { const result = completeTimer(state, sessionId, new Date(), taskId); if (!result.completed) return; awardXp(state, result.minutes * 2, `timer:${sessionId}`); save(); renderAll(); $('session-complete-msg').textContent = `Je hebt ${result.subject} gestudeerd voor ${result.minutes} minuten. +${result.minutes * 2} XP!`; $('session-modal').style.display = 'flex'; if ('Notification' in window && Notification.permission === 'granted') new Notification('Focussessie afgerond', { body: `${result.minutes} minuten ${result.subject}. Goed gewerkt!` }); }
@@ -191,19 +204,94 @@ function useStreakFreezeFromProfile() {
 function openNoteEditor(id) { editingNoteId = id === -1 ? null : id; const note = state.notes.find(item => item.id === editingNoteId); $('note-title-input').value = note?.title || ''; $('note-body-input').value = note?.body || ''; $('notes-list-view').style.display = 'none'; $('notes-editor-view').style.display = 'flex'; $('note-title-input').focus(); }
 function closeNoteEditor() { editingNoteId = null; $('notes-list-view').style.display = 'block'; $('notes-editor-view').style.display = 'none'; }
 function saveNote() { const result = persistNote(state, editingNoteId, $('note-title-input').value, $('note-body-input').value); if (result.isNew) awardXp(state, 5, `note:create:${result.item.id}`); save(); closeNoteEditor(); renderNotes(); renderProfile(); if (result.isNew) toast('+5 XP verdiend!'); }
+async function prepareTutorImage(file) {
+  if (!file.type.startsWith('image/')) throw new Error('Kies een foto van je boek of lespagina.');
+  if (file.size > 20 * 1024 * 1024) throw new Error('Deze foto is erg groot. Kies een kleinere foto.');
+  if (typeof createImageBitmap !== 'function') throw new Error('Foto’s scannen wordt niet ondersteund door deze browser.');
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    throw new Error('Deze foto kan niet worden geopend. Kies een JPG-, PNG- of WebP-foto.');
+  }
+  try {
+    let width = bitmap.width;
+    let height = bitmap.height;
+    const scale = Math.min(1, 1800 / Math.max(width, height));
+    width = Math.max(1, Math.round(width * scale));
+    height = Math.max(1, Math.round(height * scale));
+    let blob;
+    for (const quality of [0.82, 0.72, 0.62, 0.52]) {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(bitmap, 0, 0, width, height);
+      blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+      if (blob?.size <= 1_800_000) break;
+      width = Math.max(1, Math.round(width * 0.8));
+      height = Math.max(1, Math.round(height * 0.8));
+    }
+    if (!blob || blob.size > 1_800_000) throw new Error('Deze foto kan niet klein genoeg worden gemaakt. Kies een andere foto.');
+    const dataUrl = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error('De foto kon niet worden gelezen.'));
+      reader.readAsDataURL(blob);
+    });
+    return {
+      image: { mimeType: blob.type, data: dataUrl.split(',')[1] },
+      previewUrl: URL.createObjectURL(blob)
+    };
+  } finally {
+    bitmap.close?.();
+  }
+}
+function clearTutorImage() {
+  tutorImage = null;
+  if (tutorImagePreviewUrl) URL.revokeObjectURL(tutorImagePreviewUrl);
+  tutorImagePreviewUrl = null;
+  $('tutor-image-preview').hidden = true;
+  $('tutor-image-preview-img').removeAttribute('src');
+}
+async function selectTutorImage(file) {
+  $('tutor-image-input').value = '';
+  if (!file) return;
+  clearTutorImage();
+  try {
+    const prepared = await prepareTutorImage(file);
+    tutorImage = prepared.image;
+    tutorImagePreviewUrl = prepared.previewUrl;
+    $('tutor-image-preview-img').src = tutorImagePreviewUrl;
+    $('tutor-image-preview').hidden = false;
+  } catch (error) {
+    const message = error instanceof Error && /^(?:Kies|Deze|De foto)/.test(error.message)
+      ? error.message
+      : 'De foto kon niet worden verwerkt. Kies een scherpe JPG-, PNG- of WebP-foto.';
+    toast(message);
+  }
+}
+function removeTutorImage() {
+  clearTutorImage();
+  toast('De foto is verwijderd.');
+}
+const BOOK_IMAGE_PROMPT = 'Bekijk de foto van mijn boek. Herken de boektitel en het hoofdstuk alleen als die zichtbaar zijn. Leg de inhoud van de gefotografeerde pagina stap voor stap uit op mijn niveau. Baseer je alleen op wat leesbaar is, benoem onzekerheid en vraag om een scherpere foto als dat nodig is.';
 async function sendMessage(retry = false) {
   const input = $('chat-input');
   const subject = $('ai-subject').value;
   const mode = $('ai-mode').value;
   const previousQuestion = [...state.chatHistory].reverse().find(item => item.subject === subject && item.role === 'user');
-  const question = (retry ? previousQuestion?.content || '' : input.value).trim();
+  const image = retry ? lastTutorImage : tutorImage;
+  if (retry && previousQuestion?.imageAttached && !image) return toast('Kies de boekfoto opnieuw om deze vraag nog eens te stellen.');
+  const question = (retry ? previousQuestion?.content || '' : input.value).trim() || (image ? BOOK_IMAGE_PROMPT : '');
   if (!question || chatAbortController) return;
   state.tutorSubject = subject;
   state.tutorMode = mode;
   input.value = '';
   let userMessage = previousQuestion;
   if (!retry) {
-    userMessage = addChatMessage(state, 'user', question, subject, mode);
+    userMessage = addChatMessage(state, 'user', question, subject, mode, { imageAttached: Boolean(image) });
+    lastTutorImage = image;
+    clearTutorImage();
     save();
   } else {
     const lastAssistant = [...state.chatHistory].reverse().find(item => item.subject === subject && item.role === 'assistant');
@@ -224,6 +312,7 @@ async function sendMessage(retry = false) {
       mode,
       state,
       signal: chatAbortController.signal,
+      image,
       excludeMessageId: userMessage?.id,
       onToken: text => {
         partialReply = text;
@@ -305,7 +394,7 @@ function editProfile() {
 let authMode = 'signin'; function showAuthModal(mode) { authMode = mode; $('auth-modal-title').textContent = mode === 'signin' ? 'Inloggen' : 'Account maken'; $('auth-submit-btn').textContent = mode === 'signin' ? 'Inloggen' : 'Account maken'; $('auth-password-input').autocomplete = mode === 'signin' ? 'current-password' : 'new-password'; $('auth-modal').style.display = 'flex'; $('auth-email-input').focus(); }
 function closeAuthModal() { $('auth-modal').style.display = 'none'; $('auth-modal-status').textContent = ''; }
 async function submitAuth() { const email = $('auth-email-input').value.trim(); const password = $('auth-password-input').value; if (!email || password.length < 6) return $('auth-modal-status').textContent = 'Vul een e-mailadres en een wachtwoord van minimaal 6 tekens in.'; try { const signedIn = authMode === 'signin' ? (await auth.signIn(email, password), true) : await auth.signUp(email, password); if (signedIn) closeAuthModal(); else $('auth-modal-status').textContent = 'Controleer je e-mail om je account te bevestigen.'; } catch (error) { $('auth-modal-status').textContent = error.message || 'Inloggen is mislukt.'; } }
-async function logoutUser() { try { await auth.signOut(); toast('Uitgelogd'); } catch { toast('Uitloggen is niet gelukt.'); } }
+async function logoutUser() { clearTutorImage(); lastTutorImage = null; try { await auth.signOut(); toast('Uitgelogd'); } catch { toast('Uitloggen is niet gelukt.'); } }
 function exportData() {
   const exportedState = JSON.parse(JSON.stringify(state));
   delete exportedState.apiKey;
@@ -347,6 +436,8 @@ const clickActions = {
   'toggle-timer': toggleTimer,
   'reset-timer': resetTimer,
   'send-chip': element => sendChip(element.dataset.message),
+  'open-tutor-image': () => $('tutor-image-input').click(),
+  'remove-tutor-image': removeTutorImage,
   'stop-tutor': stopTutor,
   'retry-tutor': regenerateTutor,
   'save-tutor-note': saveTutorAsNote,
@@ -381,6 +472,7 @@ document.addEventListener('change', event => {
   if (control.dataset.changeAction === 'tutor-subject') selectTutorSubject(control.value);
   if (control.dataset.changeAction === 'tutor-mode') selectTutorMode(control.value);
   if (control.dataset.changeAction === 'learning-subject') selectLearningSubject(control.value);
+  if (control.dataset.changeAction === 'tutor-image') selectTutorImage(control.files?.[0]);
 });
 document.addEventListener('input', event => {
   if (event.target.dataset.inputAction === 'search-tutor-history') searchTutorHistory();

@@ -1,6 +1,6 @@
 import { createId, touch } from './state.js';
 
-export async function askTutor({ prompt, subject, mode, state, signal, onToken, excludeMessageId }) {
+export async function askTutor({ prompt, subject, mode, state, signal, onToken, excludeMessageId, image }) {
   const question = String(prompt || '').trim().slice(0, 4000);
   if (!question) throw new Error('Schrijf eerst een vraag.');
   const history = state.chatHistory
@@ -17,6 +17,7 @@ export async function askTutor({ prompt, subject, mode, state, signal, onToken, 
       mode: mode || 'uitleggen',
       profile: { age: state.age, level: state.studyLevel },
       history,
+      ...(image ? { image } : {}),
       stream: true
     })
   });
@@ -53,18 +54,20 @@ export async function askTutor({ prompt, subject, mode, state, signal, onToken, 
   return complete.slice(0, 12000);
 }
 
-export function addChatMessage(state, role, content, subject = state.tutorSubject, mode = state.tutorMode) {
-  state.chatHistory.push({
+export function addChatMessage(state, role, content, subject = state.tutorSubject, mode = state.tutorMode, metadata = {}) {
+  const message = {
     id: createId('chat'),
     role: role === 'assistant' ? 'assistant' : 'user',
     content: String(content).slice(0, 12000),
     subject,
     mode,
     updated_at: new Date().toISOString()
-  });
+  };
+  if (metadata.imageAttached) message.imageAttached = true;
+  state.chatHistory.push(message);
   state.chatHistory = state.chatHistory.slice(-150);
   touch(state);
-  return state.chatHistory[state.chatHistory.length - 1];
+  return message;
 }
 
 export function clearSubjectHistory(state, subject) {

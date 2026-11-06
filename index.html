@@ -2,8 +2,8 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#534AB7">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#4F46E5">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="manifest" href="manifest.json">
@@ -14,16 +14,28 @@
 <body>
   <div id="phone">
     <a class="skip-link" href="#screen">Ga naar inhoud</a>
-    <div class="status-bar" aria-hidden="true">
-      <span id="clock">9:41</span>
-      <span>Studiemaatje</span>
-      <span>100%</span>
-    </div>
     <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
     <div class="update-banner" id="update-banner" role="status" aria-live="polite" hidden>
       <span>Er staat een nieuwe versie klaar.</span>
       <button class="btn btn-sm" type="button" id="apply-update-btn">Bijwerken</button>
     </div>
+    <header class="app-header" id="app-header" hidden>
+      <button class="brand-lockup" type="button" data-action="go-to" data-page="home" aria-label="Studiemaatje, naar start">
+        <span class="brand-mark" aria-hidden="true">S</span>
+        <span class="brand-name">studiemaatje<span class="brand-period">.</span></span>
+      </button>
+      <div class="header-divider" aria-hidden="true"></div>
+      <span class="workspace-label">Jouw leerplek</span>
+      <div class="header-actions">
+        <span class="sync-indicator" id="header-sync-pill"><span class="sync-dot"></span><span id="header-sync-text">Alleen op dit apparaat</span></span>
+        <button class="profile-trigger" type="button" data-action="go-to" data-page="profile" aria-label="Open je profiel">
+          <span class="profile-avatar" id="header-avatar">S</span>
+          <span class="profile-trigger-name" id="header-profile-name">Student</span>
+          <span class="profile-chevron" aria-hidden="true">⌄</span>
+        </button>
+      </div>
+    </header>
+
     <main class="screen" id="screen" tabindex="-1">
 
       <div class="page active" id="pg-auth-landing" style="justify-content:center">
@@ -87,45 +99,40 @@
       </div>
 
       <div class="page" id="pg-home">
-        <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+        <div class="home-heading">
           <div>
+            <div class="eyebrow">JOUW STUDIEOVERZICHT</div>
             <h1 class="page-title" id="greeting">Goedemorgen</h1>
             <div class="page-sub" id="home-sub">Klaar om te leren?</div>
           </div>
-          <div class="streak-fire">Reeks <span id="streak-num">0</span></div>
+          <div class="streak-fire"><span class="streak-icon" aria-hidden="true">✦</span><span><strong id="streak-num">0</strong><small>dagen op rij</small></span></div>
         </div>
-        <div class="card" style="margin-bottom:12px">
-          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-            <span style="font-size:13px;font-weight:500">Doel van vandaag</span>
-            <span style="font-size:12px;color:var(--color-text-secondary)" id="goal-progress-txt">0 / 2h</span>
+        <section class="card goal-card" aria-labelledby="daily-goal-title">
+          <div class="goal-card-copy">
+            <div class="eyebrow">KLEINE STAPPEN, GROTE GROEI</div>
+            <h2 id="daily-goal-title">Doel van vandaag</h2>
+            <p id="goal-progress-txt">0 / 2h</p>
+            <div class="progress-track" role="progressbar" aria-label="Dagdoel" aria-valuemin="0" aria-valuemax="120" aria-valuenow="0" id="goal-progress"><div class="progress-fill" id="goal-bar" style="width:0%"></div></div>
+            <button class="btn btn-primary" data-action="go-to" data-page="focus"><span aria-hidden="true">▶</span> Start focussessie</button>
           </div>
-          <div class="progress-track" role="progressbar" aria-label="Dagdoel" aria-valuemin="0" aria-valuemax="120" aria-valuenow="0" id="goal-progress"><div class="progress-fill" id="goal-bar" style="width:0%"></div></div>
-          <div style="margin-top:12px">
-            <button class="btn btn-primary btn-full" data-action="go-to" data-page="focus">Start focussessie</button>
+          <div class="goal-illustration" aria-hidden="true">
+            <div class="goal-orbit orbit-one"></div>
+            <div class="goal-orbit orbit-two"></div>
+            <div class="goal-orbit orbit-three"></div>
+            <span class="goal-spark spark-one">✦</span><span class="goal-spark spark-two">✦</span>
+            <div class="goal-center">S</div>
           </div>
-        </div>
+        </section>
         <div class="metric-row">
-          <div class="metric-box">
-            <div class="metric-label">Totaal XP</div>
-            <div class="metric-val" id="xp-display">0</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-label">Niveau</div>
-            <div class="metric-val" id="level-display">-</div>
-          </div>
+          <div class="metric-box metric-xp"><span class="metric-icon" aria-hidden="true">✳</span><div class="metric-label">Totaal XP</div><div class="metric-val" id="xp-display">0</div></div>
+          <div class="metric-box metric-level"><span class="metric-icon" aria-hidden="true">↗</span><div class="metric-label">Niveau</div><div class="metric-val" id="level-display">-</div></div>
+          <div class="metric-box metric-sessions"><span class="metric-icon" aria-hidden="true">◷</span><div class="metric-label">Sessies vandaag</div><div class="metric-val" id="sessions-today">0</div></div>
+          <div class="metric-box metric-tasks"><span class="metric-icon" aria-hidden="true">✓</span><div class="metric-label">Taken afgerond</div><div class="metric-val" id="tasks-done">0</div></div>
         </div>
-        <div class="metric-row">
-          <div class="metric-box">
-            <div class="metric-label">Sessies vandaag</div>
-            <div class="metric-val" id="sessions-today">0</div>
-          </div>
-          <div class="metric-box">
-            <div class="metric-label">Taken afgerond</div>
-            <div class="metric-val" id="tasks-done">0</div>
-          </div>
-        </div>
-        <div class="sec-hdr">Aankomende taken</div>
-        <div id="upcoming-tasks" style="font-size:13px;color:var(--color-text-secondary)">Nog geen taken</div>
+        <section class="card upcoming-card" aria-labelledby="upcoming-title">
+          <div class="section-heading"><div><div class="eyebrow">OP JE PLANNING</div><h2 id="upcoming-title">Aankomende taken</h2></div><button class="text-action" type="button" data-action="go-to" data-page="tasks">Alle taken <span aria-hidden="true">→</span></button></div>
+          <div id="upcoming-tasks">Nog geen taken</div>
+        </section>
       </div>
 
       <div class="page" id="pg-focus" style="align-items:center">
@@ -203,9 +210,18 @@
           <label for="tutor-history-search" class="sr-only">Zoek in deze vakgeschiedenis</label>
           <input id="tutor-history-search" placeholder="Zoek in dit vak…" data-input-action="search-tutor-history">
         </div>
+        <div class="tutor-image-preview" id="tutor-image-preview" role="status" aria-live="polite" hidden>
+          <img id="tutor-image-preview-img" alt="Voorbeeld van je gekozen boekfoto">
+          <div class="tutor-image-preview-copy"><strong>Foto klaar voor de tutor</strong><span>Wordt naar de AI gestuurd, maar niet in je account bewaard.</span></div>
+          <button class="icon-button" type="button" aria-label="Foto verwijderen" data-action="remove-tutor-image">×</button>
+        </div>
         <div class="chat-input-row">
+          <input id="tutor-image-input" type="file" accept="image/*" capture="environment" data-change-action="tutor-image" hidden>
+          <button class="btn tutor-image-button" type="button" data-action="open-tutor-image" aria-label="Maak of kies een foto van je boek">
+            <span aria-hidden="true">▧</span><span class="tutor-image-button-label">Scan boek</span>
+          </button>
           <label class="sr-only" for="chat-input">Stel een vraag aan je tutor</label>
-          <input id="chat-input" maxlength="4000" placeholder="Stel een vraag..." data-enter-action="send-message">
+          <input id="chat-input" maxlength="4000" placeholder="Vraag over je boek of les..." data-enter-action="send-message">
           <button class="send-btn" type="button" aria-label="Stuur je vraag" data-action="send-message">
             <svg width="14" height="14" viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
           </button>
@@ -215,7 +231,7 @@
       <div class="page" id="pg-tasks">
         <h1 class="page-title">Taken</h1>
         <div style="display:flex;gap:8px;margin-bottom:12px">
-          <button class="btn btn-sm" id="filter-all" data-action="filter-tasks" data-filter="all" style="font-weight:500">Alles</button>
+          <button class="btn btn-sm" id="filter-all" data-action="filter-tasks" data-filter="all">Alles</button>
           <button class="btn btn-sm" id="filter-todo" data-action="filter-tasks" data-filter="todo">Te doen</button>
           <button class="btn btn-sm" id="filter-done" data-action="filter-tasks" data-filter="done">Klaar</button>
         </div>
@@ -373,7 +389,8 @@
 
     </main>
 
-    <nav class="tab-bar" id="tab-bar" aria-label="Hoofdnavigatie" style="display:none">
+    <nav class="tab-bar" id="tab-bar" aria-label="Hoofdnavigatie" hidden>
+      <div class="sidebar-nav-label">WERKRUIMTE</div>
       <button type="button" class="tab-item active" id="tab-home" aria-current="page" data-action="go-to" data-page="home">
         <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10.8 12 3l9 7.8v9.7a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1z"/></svg></span>
         <span class="tab-label">Start</span>
@@ -402,6 +419,7 @@
         <span class="tab-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12a4.2 4.2 0 1 0-4.2-4.2A4.2 4.2 0 0 0 12 12zm0 2.2c-4 0-7.2 2.1-7.2 4.6V21h14.4v-2.2c0-2.5-3.2-4.6-7.2-4.6z"/></svg></span>
         <span class="tab-label">Profiel</span>
       </button>
+      <div class="sidebar-footer"><span class="sidebar-footer-mark">✦</span><span>Elke sessie telt.<small>Op jouw tempo leren</small></span></div>
     </nav>
 
     <div class="modal-overlay" id="session-modal" style="display:none">
@@ -432,6 +450,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
-  <script type="module" src="js/script.js?version=17"></script>
+  <script type="module" src="js/script.js?version=27"></script>
 </body>
 </html>

@@ -23,8 +23,7 @@ export function renderTimer(state) {
   Object.keys(MODES).forEach(mode => {
     const button = byId(`mode-${mode}`);
     if (!button) return;
-    button.style.background = mode === state.timerMode ? '#534AB7' : '';
-    button.style.color = mode === state.timerMode ? '#fff' : '';
+    button.classList.toggle('is-selected', mode === state.timerMode);
     button.setAttribute('aria-pressed', String(mode === state.timerMode));
   });
 }
@@ -199,6 +198,12 @@ export function renderChat(state, subject = state.tutorSubject, search = '') {
   }
   messages.forEach(item => {
     const bubble = addBubble(item.role === 'assistant' ? 'ai' : 'user', item.content);
+    if (item.imageAttached) {
+      const attachment = document.createElement('span');
+      attachment.className = 'chat-attachment-label';
+      attachment.textContent = 'Boekfoto meegestuurd';
+      bubble.append(attachment);
+    }
     if (item.role === 'assistant') renderMarkdown(bubble, item.content);
   });
 }
@@ -252,8 +257,12 @@ export function renderHome(state) {
 export function renderAuth(sync) {
   const loggedIn = Boolean(sync.user);
   const offline = sync.mode === 'offline';
+  const header = byId('header-sync-pill');
   byId('auth-status-pill').textContent = offline ? 'Offline' : sync.mode === 'error' ? 'Sync fout' : loggedIn ? 'Verbonden' : 'Uitgelogd';
   byId('auth-status-pill').className = `pill ${offline ? 'pill-amber' : sync.mode === 'error' ? 'pill-coral' : loggedIn ? 'pill-teal' : 'pill-amber'}`;
+  header.classList.toggle('is-offline', offline);
+  header.classList.toggle('has-error', sync.mode === 'error');
+  byId('header-sync-text').textContent = offline ? 'Offline' : sync.mode === 'error' ? 'Sync controleren' : loggedIn ? 'Opgeslagen' : 'Alleen op dit apparaat';
   byId('auth-status-text').textContent = sync.message;
   byId('signed-in-email').textContent = loggedIn ? `Ingelogd als ${sync.user.email || ''}` : '';
   byId('logout-btn').style.display = loggedIn ? 'block' : 'none';
@@ -272,6 +281,8 @@ export function renderThemeButtons(state) {
 export function renderProfile(state, sync) {
   byId('profile-name').textContent = state.name;
   byId('avatar-initials').textContent = (state.name || 'S')[0].toUpperCase();
+  byId('header-avatar').textContent = (state.name || 'S')[0].toUpperCase();
+  byId('header-profile-name').textContent = (state.name || 'Student').split(' ')[0];
   byId('profile-level-lbl').textContent = `${state.studyLevel} · ${state.xp} XP`;
   byId('profile-meta-lbl').textContent = `Leeftijd ${state.age || '—'}, ${state.studyLevel}`;
   const next = xpToNext(state.xp);

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'studiemaatje-v18';
+const CACHE_NAME = 'studiemaatje-v28';
 const CACHE_PREFIX = 'studiemaatje-';
 const APP_SHELL = [
   '/',
@@ -7,7 +7,7 @@ const APP_SHELL = [
   '/css/styles.css',
   '/icons/icon-192.svg',
   '/icons/icon-512.svg',
-  '/js/script.js?version=17',
+  '/js/script.js?version=27',
   '/js/config.js',
   '/js/modules/state.js',
   '/js/modules/storage.js',
@@ -21,7 +21,8 @@ const APP_SHELL = [
   '/js/modules/learning.js',
   '/js/modules/learning-ui.js',
   '/js/modules/challenges.js',
-  '/js/modules/pwa.js'
+  '/js/modules/pwa.js',
+  '/js/modules/navigation.js'
 ];
 
 self.addEventListener('install', event => {
