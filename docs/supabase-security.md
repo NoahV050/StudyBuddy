@@ -6,6 +6,8 @@ De client leest en schrijft uitsluitend de `profiles`-rij met `user_id`, `state`
 
 ## RLS-controle voor `public.profiles`
 
+Voor een nieuw project kun je de gecontroleerde basisconfiguratie toepassen via **Supabase Dashboard → SQL Editor → New query**. Open [`supabase/migrations/20261106110000_create_profiles.sql`](../supabase/migrations/20261106110000_create_profiles.sql), kopieer de inhoud naar de query-editor en voer deze uit. Deze migratie maakt de tabel en eigen-rij-policies aan die de huidige app gebruikt. Controleer in **Table Editor** of `public.profiles` daarna bestaat.
+
 Controleer eerst in de Supabase SQL Editor dat `user_id` een UUID is, uniek is en verwijst naar `auth.users.id`. Controleer ook bestaande policies: Supabase permissive policies worden samengevoegd met OR, dus een nieuwe eigen-rij-policy neutraliseert geen bestaande brede policy. Verwijder of beperk onveilige bestaande policies voordat je onderstaande policies toepast:
 
 ```sql

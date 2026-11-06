@@ -54,7 +54,7 @@ De tutor heeft `GEMINI_API_KEY` nodig. Accountverwijdering vereist daarnaast `SU
 
 De app gebruikt een tabel `public.profiles` met minimaal een `user_id` (UUID), `state` (JSONB) en `updated_at` (timestamptz). De accountverwijderingsroute verwijdert de Auth-gebruiker en diens profiel.
 
-Controleer de schema- en RLS-configuratie vóór gebruik. De aanbevolen eigen-rij-policies, vereiste servervariabelen en aandachtspunten voor accountverwijdering staan in [docs/supabase-security.md](./docs/supabase-security.md). De daadwerkelijke productiepolicies zijn niet vanuit deze repository te controleren.
+Voor een nieuw Supabase-project moet je de migratie in `supabase/migrations/` eerst uitvoeren via **SQL Editor** in het Supabase-dashboard. Controleer daarna onder **Authentication → Sign In / Providers** dat e-mail is ingeschakeld. De aanbevolen eigen-rij-policies, vereiste servervariabelen en aandachtspunten voor accountverwijdering staan in [docs/supabase-security.md](./docs/supabase-security.md). De daadwerkelijke productiepolicies zijn niet vanuit deze repository te controleren.
 
 ## Deployment
 
