@@ -1,4 +1,4 @@
-const CACHE_NAME = 'studiemaatje-v17';
+const CACHE_NAME = 'studiemaatje-v18';
 const CACHE_PREFIX = 'studiemaatje-';
 const APP_SHELL = [
   '/',
@@ -7,7 +7,7 @@ const APP_SHELL = [
   '/css/styles.css',
   '/icons/icon-192.svg',
   '/icons/icon-512.svg',
-  '/js/script.js?version=16',
+  '/js/script.js?version=17',
   '/js/config.js',
   '/js/modules/state.js',
   '/js/modules/storage.js',
